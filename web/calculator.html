@@ -77,10 +77,10 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .frac>.num,.frac>.den{display:flex;justify-content:center;align-items:center;min-width:.8em;min-height:1.05em;padding:0 .15em}
 .frac>.num{border-bottom:max(2px,.06em) solid currentColor;padding-bottom:.08em}
 .frac>.den{padding-top:.08em}
-.expr .frac>.num:not(:has(.ch)),.expr .frac>.den:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-3px;border-radius:4px}
+.boxes .frac>.num:not(:has(.ch)),.boxes .frac>.den:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-3px;border-radius:4px}
 .result .frac{font-size:.62em}
 .sup{display:inline-flex;align-items:center;font-size:.6em;align-self:flex-start;margin:-.05em .04em 0;min-height:1.05em}
-.expr .sup:not(:has(.ch)){min-width:.7em;outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
+.boxes .sup:not(:has(.ch)){min-width:.7em;outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
 .hist-expr .sup{font-size:.7em}
 .frac .frac{font-size:.85em}
 .big{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .06em}
@@ -90,7 +90,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .bup{order:1}.blo{order:3}
 .kv{opacity:.7}
 .bbody{display:inline-flex;align-items:center;min-width:.6em;min-height:1em}
-.expr .bup:not(:has(.ch)),.expr .blo:not(:has(.ch)),.expr .bbody:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
+.boxes .bup:not(:has(.ch)),.boxes .blo:not(:has(.ch)),.boxes .bbody:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
 .hist-expr .frac,.hist-res .frac{font-size:.7em}
 .rad{display:inline-flex;align-items:stretch;margin:0 .04em;vertical-align:middle}
 .rsym{display:flex;align-items:flex-end;font-size:1.1em;line-height:1;margin-right:-.06em;transform:scaleY(1.08);transform-origin:bottom}
@@ -99,7 +99,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .lgw{display:inline-flex;align-items:center;margin:0 .04em}
 .lsub{display:inline-flex;justify-content:center;font-size:.5em;align-self:flex-end;min-width:1em;min-height:1em;margin:0 .06em -.1em .04em}
 .larg{display:inline-flex;align-items:center;min-width:.6em;min-height:1em}
-.expr .rbody:not(:has(.ch)),.expr .ridx:not(:has(.ch)),.expr .lsub:not(:has(.ch)),.expr .larg:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
+.boxes .rbody:not(:has(.ch)),.boxes .ridx:not(:has(.ch)),.boxes .lsub:not(:has(.ch)),.boxes .larg:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
 .expr:focus-visible{box-shadow:inset 0 -2px 0 var(--focus)}
 .result{display:block;min-height:1.3em;font-size:26px;line-height:1.3;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;padding:0 2px;border-radius:12px;
@@ -269,6 +269,26 @@ body{display:flex;flex-direction:column}
 .ans small{color:var(--muted);font-size:13px;margin-right:6px}
 .ans.err{color:var(--err);cursor:default;font-size:16px}
 
+/* Math fields + their keypad */
+.mfield{flex:1;min-width:0;min-height:48px;display:flex;align-items:center;font-size:24px;line-height:1.25;white-space:nowrap;overflow-x:auto;scrollbar-width:none;cursor:text;outline:none;font-variant-numeric:tabular-nums;padding:4px 0}
+.mfield::-webkit-scrollbar{display:none}
+.mfield .ln{display:inline-flex;align-items:center}
+.mfield:empty::before{content:attr(data-ph);color:var(--muted);opacity:.75;font-size:16px}
+.mfield .caret{height:1.1em}
+.field.active{outline:2px solid var(--focus)}
+.fpad{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--sheet);border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.14);
+  padding:10px max(10px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px));animation:padUp .26s cubic-bezier(.2,0,0,1)}
+@keyframes padUp{from{transform:translateY(100%)}}
+.fpad-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:44px;gap:6px;max-width:640px;margin:0 auto}
+.fpad .key{min-height:0;font-size:18px;border-radius:14px}
+.fpad .key.digit{font-size:21px}
+.fpad .key.sci{background:color-mix(in srgb,var(--on) 8%,var(--sheet))}
+.fpad .key.wide{grid-column:span 2}
+body.fpad-open .tabbar{visibility:hidden}
+body.fpad-open .screen{padding-bottom:calc(var(--fpad-h,330px) + 8px)}
+body.fpad-open .g-wrap{min-height:200px}
+body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
+
 /* Graph screen */
 .g-funcs{display:flex;flex-direction:column;gap:8px}
 .g-dot{width:14px;height:14px;border-radius:50%;flex:none}
@@ -303,7 +323,7 @@ body{display:flex;flex-direction:column}
       <span class="badge" id="fracBadge" hidden title="Результат дробью">a⁄b</span>
       <span class="badge" id="memBadge" hidden title="В памяти есть число">M</span>
     </div>
-    <div id="expr" class="expr" role="textbox" tabindex="0" aria-label="Выражение"></div>
+    <div id="expr" class="expr boxes" role="textbox" tabindex="0" aria-label="Выражение"></div>
     <output id="result" class="result" tabindex="0" role="button" aria-live="polite" aria-label="Результат. Нажмите, чтобы скопировать"></output>
   </section>
 
@@ -335,7 +355,6 @@ body{display:flex;flex-direction:column}
 <section class="screen" id="graphScreen" hidden aria-labelledby="gTitle">
   <h2 id="gTitle">Графики</h2>
   <div class="g-funcs" id="gFuncs"></div>
-  <div class="chips" id="gChips" aria-label="Быстрый ввод в формулу"></div>
   <div class="g-wrap">
     <canvas id="gCanvas" aria-label="График функций. Двигайте пальцем, разводите двумя пальцами для масштаба, коснитесь линии — покажу точку"></canvas>
     <div class="g-tools">
@@ -356,9 +375,8 @@ body{display:flex;flex-direction:column}
     <button type="button" data-v="sys3">Система 3</button>
   </div>
   <div id="solveEq" class="out-card">
-    <div class="muted">Напишите уравнение с x, например <b>2x+3=7</b>, <b>x^3=8</b> или <b>sin(x)=0.5</b>. Углы — как в настройках калькулятора.</div>
-    <div class="field" id="eqField"><input class="inp" id="eqIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="x^2−5x+6=0" aria-label="Уравнение"></div>
-    <div class="chips" id="eqChips"></div>
+    <div class="muted">Нажмите на поле и наберите уравнение с x на клавиатуре снизу, например <b>2x+3=7</b> или <b>sin(x)=0.5</b>. Углы — как в настройках калькулятора.</div>
+    <div class="field" id="eqField"><div class="mfield boxes" id="eqIn" role="textbox" tabindex="0" aria-label="Уравнение" data-ph="Нажмите и пишите: x²−5x+6=0"></div></div>
   </div>
   <div id="solveQuad" class="out-card" hidden>
     <div class="muted">Квадратное уравнение <b>ax² + bx + c = 0</b>. Покажу дискриминант и корни, в том числе комплексные.</div>
@@ -376,6 +394,8 @@ body{display:flex;flex-direction:column}
   <div class="out-card" id="solveOut" aria-live="polite" hidden></div>
 </section>
 </div>
+
+<div class="fpad" id="fpad" hidden role="group" aria-label="Клавиатура для формулы"><div class="fpad-grid" id="fpadGrid"></div></div>
 
 <nav class="tabbar" id="tabbar" role="tablist" aria-label="Экраны">
   <button class="tab" role="tab" type="button" data-tab="0" aria-selected="true" aria-label="Калькулятор"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-5.97 4.06L14.09 6l1.41 1.41L16.91 6l1.06 1.06-1.41 1.41 1.41 1.41-1.06 1.06-1.41-1.4-1.41 1.41-1.06-1.06 1.41-1.41-1.41-1.42zM6.25 7.72h5v1.5h-5v-1.5zM11.5 16h-2v2H8v-2H6v-1.5h2v-2h1.5v2h2V16zm6.5 1.25h-5v-1.5h5v1.5zm0-2.5h-5v-1.5h5v1.5z"/></svg><span class="tl">Калькулятор</span></button>
@@ -937,7 +957,7 @@ function insert(text){
   let before=S.expr.slice(0,S.cur);const after=S.expr.slice(S.cur);
   if(BIN.includes(text)){
     if(before===''){
-      if(text!=='−'){if(S.hist.length)before='Отв';else return}
+      if(text!=='−'){if(S.hist.length&&!S.fieldMode)before='Отв';else return}
     }else{
       const last=BIN.find(o=>before.endsWith(o));
       if(last){
@@ -1065,7 +1085,7 @@ function fracKey(){
   const s=S.expr,c=S.cur;
   // Always makes a new fraction, also inside another one. Moving between boxes is done with ‹ ›.
   if(!S.fracTip){S.fracTip=true;setTimeout(()=>snack('Перейти дальше — в знаменатель или из дроби — кнопка ›'),150)}
-  const m=/(\d+\.?\d*|\.\d+|Ans|Отв|π|e)$/.exec(s.slice(0,c)); // a number right before becomes the numerator
+  const m=/(\d+\.?\d*|\.\d+|Ans|Отв|π|e|x)$/.exec(s.slice(0,c)); // a number right before becomes the numerator
   if(m){const st=c-m[0].length;S.expr=s.slice(0,st)+'⦃'+m[0]+'⦙⦄'+s.slice(c);S.cur=st+m[0].length+2}
   else{S.expr=s.slice(0,c)+'⦃⦙⦄'+s.slice(c);S.cur=c+1}
   render();
@@ -1073,7 +1093,7 @@ function fracKey(){
 function boxKey(open,mid,tip,tipKey){ // inserts an empty box structure, caret in its first box
   if(S.done)beginEdit('fresh');
   const c=S.cur;let pre='';
-  if(/[\dπe)²³!%iΩ⟧⦄⟩⟫⦚⟭k]$/.test(S.expr.slice(0,c))&&open!=='⟪')pre='×';
+  if(/[\dπe)²³!%iΩ⟧⦄⟩⟫⦚⟭kx]$/.test(S.expr.slice(0,c))&&open!=='⟪')pre='×';
   if(tip&&!S[tipKey]){S[tipKey]=true;setTimeout(()=>snack(tip),150)}
   S.expr=S.expr.slice(0,c)+pre+open+mid+CLOSE_OF[open]+S.expr.slice(c);S.cur=c+pre.length+1;render();
 }
@@ -1301,6 +1321,7 @@ const fracHTML=t=>{const m=/^(−?)(\d+)⁄(\d+)$/.exec(t);return m?m[1]+`<span 
 const measureText=s=>s.replace(/⦃([^⦃⦄]*)⦙?([^⦃⦄]*)⦄?/g,(m,a,b)=>'0'.repeat(Math.ceil(Math.max(a.length,b.length,1)*0.6)+1)).replace(/[⟬⟮]/g,'Σ0').replace(/[⟨⟪]/g,'√').replace(/⦗/g,'log').replace(/[⁅⁆⟭⟦⟧⟩⟫⁑⦘⦚]/g,'');
 let lastShown='';
 function render(){
+  if(S.fieldMode){drawField(S.fieldMode.el,S.expr,S.cur,true);return}
   exprEl.innerHTML='<span class="ln">'+renderExpr(S.expr,S.done?-1:S.cur)+'</span>';
   exprEl.setAttribute('aria-label','Выражение: '+(plainExpr(S.expr)||'пусто'));
   dispEl.classList.toggle('done',S.done);
@@ -1470,6 +1491,7 @@ window.calcBack=function(){
   if(S.histOpen){setHist(false);return true}
   if(S.setOpen){setSettings(false);return true}
   if(S.moreOpen){setMore(false);return true}
+  if(PAD.f){closePad();return true}
   if(S.tab){setTab(0);return true}
   return false;
 };
@@ -1520,6 +1542,7 @@ S.tab=0;
 const SCREENS=['app','graphScreen','solveScreen'];
 function setTab(i){
   if(i===S.tab)return;
+  closePad();
   S.tab=i;
   SCREENS.forEach((id,k)=>{const el=$(id);el.hidden=k!==i;if(k===i){el.classList.remove('enter');void el.offsetWidth;el.classList.add('enter')}});
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(+t.dataset.tab===i)));
@@ -1541,10 +1564,94 @@ function chipRow(host,items,getInput){
 }
 const CHIPS=[['x','x'],['x²','^2'],['^','^'],['√','√('],['π','π'],['e','e'],['sin','sin('],['cos','cos('],['tan','tan('],['ln','ln('],['lg','lg('],['|x|','abs('],['(','('],[')',')'],['=','=']];
 
+/* ================= math fields with their own keypad ================= */
+const PAD={f:null};
+function drawField(el,expr,cur,active){
+  el.innerHTML=expr===''&&!active?'':'<span class="ln">'+renderExpr(expr,active?cur:-1)+'</span>';
+  el.setAttribute('aria-label',(el.dataset.label||'Формула')+': '+(plainExpr(expr)||'пусто'));
+  if(active){const c=el.querySelector('.caret');if(c){const r=c.getBoundingClientRect(),q=el.getBoundingClientRect();if(r.right>q.right-8)el.scrollLeft+=r.right-q.right+24;else if(r.left<q.left+8)el.scrollLeft-=q.left-r.left+24}}
+}
+function makeField(el,expr,onChange,onEnter){
+  const f={el,expr:expr||'',cur:(expr||'').length,onChange,onEnter};el._mf=f;el.dataset.label=el.getAttribute('aria-label')||'Формула';
+  drawField(el,f.expr,f.cur,false);
+  el.addEventListener('click',e=>{
+    const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody,.rbody,.ridx,.lsub,.larg');
+    let pos=f.expr.length;
+    if(ch){const i=+ch.dataset.i,r=ch.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?i+1:i}else if(slot)pos=+slot.dataset.pos;
+    f.cur=Math.max(0,Math.min(f.expr.length,pos));openPad(f);
+  });
+  el.addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key;
+    if(k==='Enter'){e.preventDefault();if(f.onEnter)f.onEnter();else closePad();return}
+    if(k==='Escape'){closePad();e.stopPropagation();return}
+    if(PAD.f!==f)openPad(f);
+    const map={'*':'×','/':'÷','-':'−',':':'÷'};
+    if(k==='Backspace')edit(f,backspace);else if(k==='Delete')edit(f,delForward);
+    else if(k==='ArrowLeft')edit(f,()=>moveCursor(-1));else if(k==='ArrowRight')edit(f,()=>moveCursor(1));
+    else if(k==='^')edit(f,()=>insertPow(''));
+    else if(k.length===1&&/[0-9a-zа-яё.,()+*\/\-:=!%πe²³√]/i.test(k))edit(f,()=>insert(map[k]||k));
+    else return;
+    e.preventDefault();e.stopPropagation();
+  });
+  return f;
+}
+function edit(f,fn){
+  const sv=[S.expr,S.cur,S.done,S.err,S.fracView];
+  S.expr=f.expr;S.cur=f.cur;S.done=false;S.err=false;S.fieldMode=f;
+  try{fn()}finally{f.expr=S.expr;f.cur=S.cur;S.fieldMode=null;[S.expr,S.cur,S.done,S.err,S.fracView]=sv}
+  drawField(f.el,f.expr,f.cur,PAD.f===f);
+  if(f.onChange)f.onChange(f.expr);
+}
+const FKEYS=[
+  ['x','x','Переменная x',()=>insert('x')],['x²','x'+sup('2'),'Квадрат',()=>insert('²')],['xʸ','x'+sup('y'),'Степень',()=>insertPow('')],
+  ['√','√','Корень',rootKey],['frac','<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>','Дробь',fracKey],
+  ['=','=','Знак равенства',()=>insert('=')],
+  ['sin','sin','Синус',()=>insert('sin(')],['cos','cos','Косинус',()=>insert('cos(')],['tan','tan','Тангенс',()=>insert('tan(')],
+  ['ln','ln','Натуральный логарифм',()=>insert('ln(')],['logab','log<sub>a</sub>','Логарифм с основанием',logKey],['π','π','Пи',()=>insert('π')],
+  ['7','7','',0,'digit'],['8','8','',0,'digit'],['9','9','',0,'digit'],['÷','÷','Разделить',()=>insert('÷'),'op'],['(','(','Открыть скобку',()=>insert('(')],[')',')','Закрыть скобку',()=>insert(')')],
+  ['4','4','',0,'digit'],['5','5','',0,'digit'],['6','6','',0,'digit'],['×','×','Умножить',()=>insert('×'),'op'],['e','e','Число e',()=>insert('e')],['|x|','|x|','Модуль',()=>insert('abs(')],
+  ['1','1','',0,'digit'],['2','2','',0,'digit'],['3','3','',0,'digit'],['−','−','Минус',()=>insert('−'),'op'],['‹','‹','Курсор влево',()=>moveCursor(-1)],['›','›','Курсор вправо, выйти из дроби или степени',()=>moveCursor(1)],
+  ['0','0','',0,'digit'],['.','.','Точка',()=>insert('.'),'digit'],['⌫','<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>','Стереть (долгое нажатие — очистить)',backspace,'util'],
+  ['+','+','Плюс',()=>insert('+'),'op'],['done','Готово','Закрыть клавиатуру',null,'eq wide']
+];
+(function buildPad(){
+  const g=$('fpadGrid');
+  for(const [k,l,a,fn,cls] of FKEYS){
+    const b=document.createElement('button');b.type='button';b.className='key '+(cls||'sci');b.innerHTML='<span>'+l+'</span>';
+    if(a){b.setAttribute('aria-label',a);b.title=a}
+    b.addEventListener('pointerdown',e=>e.preventDefault()); // keep focus in the field
+    if(k==='done')b.addEventListener('click',()=>{const f=PAD.f;closePad();if(f&&f.onEnter)f.onEnter()});
+    else if(k==='⌫'){
+      let t=null,long=false;
+      b.addEventListener('pointerdown',()=>{long=false;clearTimeout(t);t=setTimeout(()=>{long=true;if(PAD.f){PAD.f.expr='';PAD.f.cur=0;edit(PAD.f,()=>{});buzz(20)}},450)});
+      ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>clearTimeout(t)));
+      b.addEventListener('click',()=>{if(long){long=false;return}if(PAD.f)edit(PAD.f,backspace)});
+    }
+    else b.addEventListener('click',()=>{if(PAD.f)edit(PAD.f,fn||(()=>insert(k)))});
+    g.appendChild(b);
+  }
+})();
+function openPad(f){
+  if(PAD.f&&PAD.f!==f){const o=PAD.f;PAD.f=null;o.el.closest('.field')?.classList.remove('active');drawField(o.el,o.expr,o.cur,false)}
+  PAD.f=f;const pad=$('fpad');pad.hidden=false;document.body.classList.add('fpad-open');
+  document.documentElement.style.setProperty('--fpad-h',pad.offsetHeight+'px');
+  f.el.closest('.field')?.classList.add('active');drawField(f.el,f.expr,f.cur,true);
+  try{f.el.focus({preventScroll:true})}catch(e){}
+  setTimeout(()=>{f.el.closest('.field')?.scrollIntoView({block:'nearest',behavior:'smooth'});gDraw()},30);
+}
+function closePad(){
+  const f=PAD.f;if(!f)return;PAD.f=null;
+  $('fpad').hidden=true;document.body.classList.remove('fpad-open');
+  f.el.closest('.field')?.classList.remove('active');drawField(f.el,f.expr,f.cur,false);
+  setTimeout(gDraw,30);
+}
+// tapping outside a field and the keypad closes it
+document.addEventListener('pointerdown',e=>{if(PAD.f&&!e.target.closest('#fpad,.mfield,.field.active')&&!e.target.closest('#gCanvas,.g-tools'))closePad()});
+
 /* ================= graphs ================= */
 const GKEY='eng-calc-graph';
-const G={fns:['sin(x)','x^2/4−1'],cx:0,cy:0,sc:40,trace:null,lastIn:null};
-try{const d=JSON.parse(localStorage.getItem(GKEY)||'{}');if(Array.isArray(d.fns)&&d.fns.length)G.fns=d.fns.slice(0,4).map(String)}catch(e){}
+const G={fns:['sin(x)','⦃x⟦2⟧⦙4⦄−1'],cx:0,cy:0,sc:40,trace:null,lastIn:null};
+try{const d=JSON.parse(localStorage.getItem(GKEY)||'{}');if(Array.isArray(d.fns)&&d.fns.length)G.fns=d.fns.slice(0,4).map(t=>String(t).replace(/\^(\d+(\.\d+)?)/g,'⟦$1⟧'))}catch(e){}
 const gSave=()=>{try{localStorage.setItem(GKEY,JSON.stringify({fns:G.fns}))}catch(e){}};
 const gColor=i=>getComputedStyle(document.documentElement).getPropertyValue('--g'+(i%4+1)).trim()||'#1a73e8';
 let gCompiled=[];
@@ -1562,21 +1669,19 @@ function gRenderFuncs(){
   const host=$('gFuncs');host.innerHTML='';
   G.fns.forEach((t,i)=>{
     const f=document.createElement('div');f.className='field';
-    f.innerHTML=`<span class="g-dot" style="background:${gColor(i)}"></span><label>y =</label><input class="inp" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Функция ${i+1}" placeholder="например x^2"><button class="icon-btn" type="button" aria-label="Убрать график"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
-    const inp=f.querySelector('input');inp.value=t;
-    inp.addEventListener('focus',()=>{G.lastIn=inp});
-    inp.addEventListener('input',()=>{G.fns[i]=inp.value;gSave();gCompile();gDraw()});
-    f.querySelector('button').addEventListener('click',()=>{G.fns.splice(i,1);if(!G.fns.length)G.fns.push('');gSave();gRenderFuncs();gDraw()});
+    f.innerHTML=`<span class="g-dot" style="background:${gColor(i)}"></span><label>y =</label><div class="mfield boxes" role="textbox" tabindex="0" aria-label="Функция ${i+1}" data-ph="нажмите, чтобы написать"></div><button class="icon-btn" type="button" aria-label="Убрать график"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>`;
+    makeField(f.querySelector('.mfield'),t,v=>{G.fns[i]=v;gSave();gCompile();gDraw()});
+    f.querySelector('button').addEventListener('click',()=>{closePad();G.fns.splice(i,1);if(!G.fns.length)G.fns.push('');gSave();gRenderFuncs();gDraw()});
     host.appendChild(f);
   });
   if(G.fns.length<4){
     const add=document.createElement('button');add.type='button';add.className='btn tonal';add.textContent='+ Ещё график';add.style.alignSelf='flex-start';
-    add.addEventListener('click',()=>{G.fns.push('');gSave();gRenderFuncs();const ins=$('gFuncs').querySelectorAll('input');ins[ins.length-1].focus()});
+    add.addEventListener('click',()=>{G.fns.push('');gSave();gRenderFuncs();const ins=$('gFuncs').querySelectorAll('.mfield');openPad(ins[ins.length-1]._mf)});
     host.appendChild(add);
   }
   gCompile();
 }
-function gBuildChips(){chipRow($('gChips'),CHIPS.filter(c=>c[0]!=='='),()=>G.lastIn||$('gFuncs').querySelector('input'))}
+function gBuildChips(){}
 const gc=$('gCanvas');
 function niceStep(raw){const p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p}
 const gNum=v=>{const r=+v.toPrecision(10);return (Math.abs(r)<1e-12?'0':String(r)).replace('-','−')};
@@ -1677,8 +1782,7 @@ segSolve.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
   if(solveMode.startsWith('sys'))buildSys(solveMode==='sys2'?2:3);
   $('solveOut').hidden=true;
 }));
-chipRow($('eqChips'),CHIPS,()=>$('eqIn'));
-$('eqIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();solve()}});
+const eqField=makeField($('eqIn'),'',()=>{},()=>solve());
 const SYS_DEF={2:[[2,1,5],[1,-1,1]],3:[[1,1,1,6],[2,-1,1,3],[1,2,-1,2]]};
 function buildSys(n){
   const g=$('sysGrid'),V=['x','y','z'];g.innerHTML='';g.style.gridTemplateColumns=`repeat(${n},1fr) auto 1fr`;
@@ -1729,7 +1833,7 @@ function findRoots(f){
 function solve(){
   try{
     if(solveMode==='eq'){
-      let t=prepFormula($('eqIn').value);
+      closePad();let t=prepFormula(eqField.expr);
       if(!t)throw new Error('Напишите уравнение');
       const parts=t.split('=');if(parts.length>2)throw new Error('Знак «=» должен быть один');
       if(!/x/.test(t))throw new Error('В уравнении нет x');
