@@ -203,9 +203,8 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .seg button:first-child{border-left:0}
 .seg button[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle)}
 .seg button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
-.seg6{display:grid;grid-template-columns:repeat(3,1fr);border-radius:18px}
-.seg6 button{border-left:1px solid var(--muted);border-top:1px solid var(--muted)}
-.seg6 button:nth-child(3n+1){border-left:0}.seg6 button:nth-child(-n+3){border-top:0}
+.seg6 button{font-size:12.5px;padding:4px 2px;min-height:40px;white-space:nowrap;flex:1.3 1 0}
+.seg6 button.sym{flex:.8 1 0;font-size:19px;font-style:italic;font-family:Georgia,serif}
 #segSolve{position:sticky;top:0;z-index:4;background:var(--bg);flex:none;box-shadow:0 -14px 0 6px var(--bg)}
 .mx{font-size:22px;line-height:1.3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;overflow-x:auto;padding:4px 0}
 .mx .ln{display:inline-flex;align-items:center;white-space:nowrap}
@@ -390,12 +389,12 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
   </div>
   <div class="out-card" id="photoNote" hidden></div>
   <div class="seg seg6" id="segSolve" role="group" aria-label="Тип задачи">
-    <button type="button" data-v="eq" aria-pressed="true">Уравнение</button>
-    <button type="button" data-v="quad">ax²+bx+c</button>
+    <button type="button" data-v="eq" aria-pressed="true" aria-label="Уравнение">f(x)=0</button>
+    <button type="button" data-v="quad" aria-label="Квадратное уравнение">ax²+bx</button>
     <button type="button" data-v="sys">Система</button>
     <button type="button" data-v="mat">Матрица</button>
-    <button type="button" data-v="int">∫ Интеграл</button>
-    <button type="button" data-v="der">f′ Производная</button>
+    <button type="button" data-v="int" aria-label="Интеграл" class="sym">∫</button>
+    <button type="button" data-v="der" aria-label="Производная" class="sym">f′</button>
   </div>
   <div id="solveEq" class="out-card">
     <div class="muted">Нажмите на поле и наберите уравнение с x на клавиатуре снизу, например <b>2x+3=7</b> или <b>sin(x)=0.5</b>. Углы — как в настройках калькулятора.</div>
