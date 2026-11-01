@@ -80,6 +80,14 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .expr .sup:not(:has(.ch)){min-width:.7em;outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
 .hist-expr .sup{font-size:.7em}
 .frac .frac{font-size:.85em}
+.big{display:inline-flex;align-items:center;vertical-align:middle;margin:0 .06em}
+.bigop{display:inline-flex;flex-direction:column;align-items:center;line-height:1;margin-right:.08em}
+.bsym{order:2;font-size:1.2em;line-height:1}
+.bup,.blo{display:flex;justify-content:center;align-items:center;font-size:.45em;min-width:1em;min-height:1.1em;padding:0 .1em}
+.bup{order:1}.blo{order:3}
+.kv{opacity:.7}
+.bbody{display:inline-flex;align-items:center;min-width:.6em;min-height:1em}
+.expr .bup:not(:has(.ch)),.expr .blo:not(:has(.ch)),.expr .bbody:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
 .hist-expr .frac,.hist-res .frac{font-size:.7em}
 .expr:focus-visible{box-shadow:inset 0 -2px 0 var(--focus)}
 .result{display:block;min-height:1.3em;font-size:26px;line-height:1.3;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -438,7 +446,21 @@ function nroot(n,x){
 const mod360=x=>((x%360)+360)%360;
 
 // ctx: {angle:'deg'|'rad'|'grad', ans:number}
-const normFrac=s=>s.replace(/⦃/g,'((').replace(/⦙/g,')⁄(').replace(/⦄/g,'))').replace(/⟦/g,'^(').replace(/⟧/g,')'); // 2D fraction ⦃num⦙den⦄, raised power ⟦exp⟧
+// 2D sum/product: ⟬от⁅до⁆выражение⟭ (Σ), ⟮…⟭ (∏) → Σ((выражение),(от),(до))
+function normBig(s){
+  if(!/[⟬⟮]/.test(s))return s;
+  const st=[{b:['']}];const top=()=>st[st.length-1];
+  const close=()=>{const f=st.pop(),[lo,up,body]=f.b;if(f.b.length<3)throw new CalcError('syntax','Заполните «от», «до» и выражение');top().b[top().b.length-1]+=f.op+'(('+body+'),('+lo+'),('+up+'))'};
+  for(const ch of s){
+    if(ch==='⟬'||ch==='⟮')st.push({op:ch==='⟬'?'Σ':'∏',b:['']});
+    else if((ch==='⁅'||ch==='⁆')&&st.length>1)top().b.push('');
+    else if(ch==='⟭'&&st.length>1)close();
+    else top().b[top().b.length-1]+=ch;
+  }
+  while(st.length>1)close();
+  return st[0].b[0];
+}
+const normFrac=s=>normBig(s).replace(/⦃/g,'((').replace(/⦙/g,')⁄(').replace(/⦄/g,'))').replace(/⟦/g,'^(').replace(/⟧/g,')'); // 2D fraction ⦃num⦙den⦄, raised power ⟦exp⟧
 function evaluate(src,ctx){
   src=normFrac(src);
   const A=ctx.angle||'deg';
@@ -688,7 +710,7 @@ function insert(text){
         const unaryMinus=text==='−'&&!['+','−'].includes(last);
         if(!unaryMinus)before=before.slice(0,-last.length);
       }
-      if(/[(⦃⦙⟦]$/.test(before)&&text!=='−')return;
+      if(/[(⦃⦙⟦⟬⟮⁅⁆]$/.test(before)&&text!=='−')return;
     }
   }else if(text==='.'){
     const seg=/[\d.]*$/.exec(before)[0];
@@ -724,7 +746,12 @@ function backspace(){
   if(S.done){beginEdit('edit');render();return}
   if(S.cur===0)return;
   const before=S.expr.slice(0,S.cur),last=before.slice(-1);
-  if(last==='⦄'||last==='⦙'||last==='⟧'){S.cur--;render();return} // step into the denominator / numerator / power
+  if('⦄⦙⟧⁅⁆⟭'.includes(last)){S.cur--;render();return}
+  if(last==='⟬'||last==='⟮'){ // remove Σ / ∏ only when its boxes are empty
+    const m=/^⁅⁆k?⟭/.exec(S.expr.slice(S.cur));
+    if(m){S.expr=before.slice(0,-1)+S.expr.slice(S.cur+m[0].length);S.cur--;render()}
+    return;
+  } // step into the denominator / numerator / power
   if(last==='⦃'){ // at the start of a numerator: remove the fraction only when it is empty
     if(S.expr.slice(S.cur).startsWith('⦙⦄')){S.expr=before.slice(0,-1)+S.expr.slice(S.cur+2);S.cur--;render()}
     return;
@@ -743,7 +770,8 @@ function delForward(){
   const after=S.expr.slice(S.cur);
   if(after.startsWith('⟦⟧')){S.expr=S.expr.slice(0,S.cur)+after.slice(2);render();return}
   if(after.startsWith('⦃⦙⦄')){S.expr=S.expr.slice(0,S.cur)+after.slice(3);render();return}
-  if('⦃⦙⦄⟦⟧'.includes(after[0])){S.cur++;render();return}
+  {const m=/^[⟬⟮]⁅⁆k?⟭/.exec(after);if(m){S.expr=S.expr.slice(0,S.cur)+after.slice(m[0].length);render();return}}
+  if('⦃⦙⦄⟦⟧⟬⟮⁅⁆⟭'.includes(after[0])){S.cur++;render();return}
   const tok=DEL_TOKENS.find(t=>after.startsWith(t));
   S.expr=S.expr.slice(0,S.cur)+after.slice(tok?tok.length:1);render();
 }
@@ -755,7 +783,7 @@ function negate(){
   else while(i>0){const ch=s[i-1];if(/[\d.Eπe]/.test(ch))i--;else if((ch==='-'||ch==='+'||ch==='−')&&s[i-2]==='E')i--;else break}
   if(i===c){insert('−');return}
   const prev=s[i-1],prev2=s[i-2];
-  if(prev==='−'&&(i-1===0||/[+−×÷^(,dPC√⦃⦙⟦]/.test(prev2))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
+  if(prev==='−'&&(i-1===0||/[+−×÷^(,dPC√⦃⦙⟦⟬⟮⁅⁆]/.test(prev2))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
   else if(prev==='−'){S.expr=s.slice(0,i-1)+'+'+s.slice(i)}
   else if(prev==='+'){S.expr=s.slice(0,i-1)+'−'+s.slice(i)}
   else{S.expr=s.slice(0,i)+'−'+s.slice(i);S.cur=c+1}
@@ -766,7 +794,7 @@ function equals(){
   let src=S.expr.trim();if(!src)return;
   const open=(src.match(/\(/g)||[]).length-(src.match(/\)/g)||[]).length;
   if(open>0)src+=')'.repeat(open);
-  {const st=[];for(const ch of src){if(ch==='⦃')st.push('⦄');else if(ch==='⟦')st.push('⟧');else if(ch==='⦄'||ch==='⟧')st.pop()}
+  {const st=[];for(const ch of src){if(ch==='⦃')st.push('⦄');else if(ch==='⟦')st.push('⟧');else if(ch==='⟬'||ch==='⟮')st.push('⟭');else if(ch==='⦄'||ch==='⟧'||ch==='⟭')st.pop()}
    while(st.length)src+=st.pop()} // close open fractions and powers
   S.expr=src;
   try{
@@ -795,7 +823,7 @@ function insertPow(base){
   if(S.done)beginEdit(base===''&&!S.err?'continue':'fresh');
   let before=S.expr.slice(0,S.cur);
   if(base===''){
-    if(before===''||/[+−×÷(⦃⦙⟦,]$/.test(before)){if(before===''&&S.hist.length)base='Отв';else{snack('Сначала введите число, потом степень');return}}
+    if(before===''||/[+−×÷(⦃⦙⟦⟬⟮⁅⁆,]$/.test(before)){if(before===''&&S.hist.length)base='Отв';else{snack('Сначала введите число, потом степень');return}}
   }else if(/^\d/.test(base)&&/[\d.]$/.test(before))base='×'+base;
   if(!S.powTip){S.powTip=true;setTimeout(()=>snack('Выйти из степени — кнопка ›'),150)}
   S.expr=before+base+'⟦⟧'+S.expr.slice(S.cur);S.cur=before.length+base.length+1;render();
@@ -810,6 +838,12 @@ function fracKey(){
   else{S.expr=s.slice(0,c)+'⦃⦙⦄'+s.slice(c);S.cur=c+1}
   render();
 }
+function bigKey(op){ // Σ / ∏ with «от» below and «до» above
+  if(S.done)beginEdit('fresh');
+  const c=S.cur,o=op==='Σ'?'⟬':'⟮';
+  if(!S.bigTip){S.bigTip=true;setTimeout(()=>snack('Снизу «от», сверху «до», справа выражение с k. Переход — кнопкой ›'),150)}
+  S.expr=S.expr.slice(0,c)+o+'⁅⁆k⟭'+S.expr.slice(c);S.cur=c+1;render();
+}
 function toggleFrac(){
   if(!S.done){equals();if(!S.done)return}
   if(S.err)return;
@@ -822,6 +856,7 @@ function moveCursor(dir){
   const s=S.expr;let c=S.cur;
   if(dir<0&&c>0){const t=DEL_TOKENS.find(t=>s.slice(0,c).endsWith(t));c-=t?t.length:1}
   else if(dir>0&&c<s.length){const t=DEL_TOKENS.find(t=>s.slice(c).startsWith(t));c+=t?t.length:1}
+  if(dir>0&&s[c-1]==='⁆'&&s.startsWith('k⟭',c))c++; // into Σ body: after the ready k
   S.cur=c;render();
 }
 function memAdd(sign){
@@ -897,8 +932,8 @@ const MORE=[
   trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
-  {k:'Σ',l:'Σ',a:'Сумма: Σ(выражение с k, от, до). Σ(k,1,100) = 5050, Σ(k²,1,10) = 385',ins:'Σ(k'},
-  {k:'∏',l:'∏',a:'Произведение: ∏(выражение с k, от, до). ∏(k,1,5) = 120',ins:'∏(k'},
+  {k:'Σ',l:'Σ',a:'Сумма: снизу «от», сверху «до», справа выражение с k. Σ k от 1 до 100 = 5050',run:()=>bigKey('Σ')},
+  {k:'∏',l:'∏',a:'Произведение: снизу «от», сверху «до», справа выражение с k. ∏ k от 1 до 5 = 120',run:()=>bigKey('∏')},
   {k:'k',l:'k',a:'Переменная k для суммы и произведения',ins:'k'},
   {k:'mod',l:'Остаток',a:'Остаток от деления: 7 ост 3 = 1',ins:'ост'},
   {k:'°',l:'°',a:'Градусы, даже в режиме радиан: sin(30°) = 0.5',ins:'°'},
@@ -992,7 +1027,10 @@ function renderExpr(s,caret){
     const ch=s[i];
     if(ch==='⦃'){h+=`<span class="frac"><span class="num" data-pos="${i+1}">`;st.push('</span></span>')}
     else if(ch==='⦙'){h+=`</span><span class="den" data-pos="${i+1}">`}
-    else if(ch==='⦄'||ch==='⟧'){if(st.length)h+=st.pop()}
+    else if(ch==='⦄'||ch==='⟧'||ch==='⟭'){if(st.length)h+=st.pop()}
+    else if(ch==='⟬'||ch==='⟮'){h+=`<span class="big"><span class="bigop"><span class="bsym">${ch==='⟬'?'Σ':'∏'}</span><span class="blo" data-pos="${i+1}"><span class="kv">k=</span>`;st.push('</span></span></span>')}
+    else if(ch==='⁅'){h+=`</span><span class="bup" data-pos="${i+1}">`}
+    else if(ch==='⁆'){h+=`</span></span><span class="bbody" data-pos="${i+1}">`;st[st.length-1]='</span></span>'}
     else if(ch==='⟦'){h+=`<span class="sup" data-pos="${i+1}">`;st.push('</span>')}
     else h+=`<span class="ch" data-i="${i}">${esc(ch)}</span>`;
   }
@@ -1000,9 +1038,9 @@ function renderExpr(s,caret){
   while(st.length)h+=st.pop();
   return h;
 }
-const plainExpr=s=>s.replace(/⦃/g,'(').replace(/⦙/g,')/(').replace(/⦄/g,')').replace(/⟦/g,'^(').replace(/⟧/g,')');
+const plainExpr=s=>{try{s=normBig(s)}catch(e){}return s.replace(/⦃/g,'(').replace(/⦙/g,')/(').replace(/⦄/g,')').replace(/⟦/g,'^(').replace(/⟧/g,')')};
 const fracHTML=t=>{const m=/^(−?)(\d+)⁄(\d+)$/.exec(t);return m?m[1]+`<span class="frac"><span class="num">${m[2]}</span><span class="den">${m[3]}</span></span>`:null};
-const measureText=s=>s.replace(/[⟦⟧]/g,'').replace(/⦃([^⦃⦄]*)⦙?([^⦃⦄]*)⦄?/g,(m,a,b)=>'0'.repeat(Math.ceil(Math.max(a.length,b.length,1)*0.6)+1));
+const measureText=s=>s.replace(/[⟬⟮]/g,'Σ0').replace(/[⁅⁆⟭⟦⟧]/g,'').replace(/⦃([^⦃⦄]*)⦙?([^⦃⦄]*)⦄?/g,(m,a,b)=>'0'.repeat(Math.ceil(Math.max(a.length,b.length,1)*0.6)+1));
 let lastShown='';
 function render(){
   exprEl.innerHTML='<span class="ln">'+renderExpr(S.expr,S.done?-1:S.cur)+'</span>';
@@ -1031,7 +1069,7 @@ function render(){
 
 /* caret editing in the middle */
 exprEl.addEventListener('click',e=>{
-  const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup');
+  const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody');
   let pos=S.expr.length;
   if(ch){const i=+ch.dataset.i,r=ch.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?i+1:i}
   else if(slot)pos=+slot.dataset.pos;
