@@ -37,6 +37,8 @@ public class MainActivity extends Activity {
     private android.content.SharedPreferences prefs;
     private static final int REQ_CAMERA = 1, REQ_PICK = 2;
     private Uri cameraUri;
+    private boolean pageReady = false;
+    private String pendingJs = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +79,8 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 view.setVisibility(View.VISIBLE);
+                pageReady = true;
+                if (pendingJs != null) { view.evaluateJavascript(pendingJs, null); pendingJs = null; }
             }
 
             @Override
@@ -93,6 +97,7 @@ public class MainActivity extends Activity {
             cameraUri = Uri.parse(savedInstanceState.getString("cameraUri"));
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(START_URL);
+        if (savedInstanceState == null) handleShare(getIntent());
     }
 
     /** Back closes an open drawer (history or settings) first, then leaves the app. */
@@ -156,6 +161,11 @@ public class MainActivity extends Activity {
         if (resultCode != RESULT_OK) { sendPhotoText(null, "cancel"); return; }
         Uri uri = requestCode == REQ_CAMERA ? cameraUri : (data != null ? data.getData() : null);
         if (uri == null) { sendPhotoText(null, "Фото не получено"); return; }
+        recognize(uri);
+    }
+
+    /** Read the text on a photo on the device (ML Kit, offline) and hand it to the page. */
+    private void recognize(Uri uri) {
         try {
             InputImage img = InputImage.fromFilePath(this, uri);
             TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS).process(img)
@@ -169,7 +179,26 @@ public class MainActivity extends Activity {
     private void sendPhotoText(String text, String error) {
         final String js = "window.onPhotoText&&onPhotoText(" + (text == null ? "null" : JSONObject.quote(text)) + ","
                 + (error == null ? "null" : JSONObject.quote(error)) + ")";
-        runOnUiThread(() -> web.evaluateJavascript(js, null));
+        runOnUiThread(() -> {
+            if (pageReady) web.evaluateJavascript(js, null);
+            else pendingJs = js; // the page is still loading (photo shared into a closed app)
+        });
+    }
+
+    /** A photo shared into the app from the gallery, a messenger or a screenshot. */
+    private void handleShare(Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return;
+        String type = intent.getType();
+        if (type == null || !type.startsWith("image/")) return;
+        Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if (uri != null) recognize(uri);
+        setIntent(new Intent()); // do not read the same photo again after rotation
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleShare(intent);
     }
 
     @Override

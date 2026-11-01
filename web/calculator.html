@@ -371,7 +371,7 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
   <h2 id="sTitle">Уравнения</h2>
   <div class="row-actions" id="photoRow" hidden>
     <button class="btn tonal" id="photoCam" type="button">📷 Сфотографировать задачу</button>
-    <button class="btn tonal" id="photoPick" type="button">Из галереи</button>
+    <button class="btn tonal" id="photoPick" type="button">🖼 Вставить фото</button>
   </div>
   <div class="out-card" id="photoNote" hidden></div>
   <div class="seg" id="segSolve" role="group" aria-label="Тип задачи">
@@ -463,6 +463,11 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
     </button>
   </div>
   <div class="set-body">
+    <div class="group" id="setPhoto" hidden>
+      <h3>Фото задачи</h3>
+      <p>Сфотографируйте пример или вставьте готовое фото либо скриншот — распознаю на телефоне и решу. Ещё можно в галерее нажать «Поделиться» → «Решить с фото».</p>
+      <div class="row-actions"><button class="btn" id="setCam" type="button">📷 Камера</button><button class="btn tonal" id="setPick" type="button">🖼 Вставить фото</button></div>
+    </div>
     <div class="group">
       <h3>Единицы углов</h3>
       <div class="seg" id="segAngle" role="group" aria-label="Единицы углов">
@@ -1941,7 +1946,9 @@ $('solveBtn').addEventListener('click',solve);
 
 /* ================= photo of a problem (Android app only: on-device text recognition) ================= */
 if(window.AndroidBridge&&window.AndroidBridge.scanPhoto){
-  $('photoRow').hidden=false;
+  $('photoRow').hidden=false;$('setPhoto').hidden=false;
+  $('setCam').addEventListener('click',()=>{setSettings(false);try{AndroidBridge.scanPhoto('camera')}catch(e){snack('Камера недоступна')}});
+  $('setPick').addEventListener('click',()=>{setSettings(false);try{AndroidBridge.scanPhoto('gallery')}catch(e){snack('Галерея недоступна')}});
   $('photoCam').addEventListener('click',()=>{try{AndroidBridge.scanPhoto('camera')}catch(e){snack('Камера недоступна')}});
   $('photoPick').addEventListener('click',()=>{try{AndroidBridge.scanPhoto('gallery')}catch(e){snack('Галерея недоступна')}});
 }
