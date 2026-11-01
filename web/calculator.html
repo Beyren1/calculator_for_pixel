@@ -304,6 +304,7 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
 .sys{display:grid;gap:8px;align-items:center}
 .sys .field{padding:0 8px;min-height:48px}
 .sys .inp{text-align:center;font-size:17px}
+.sys .mfield{font-size:20px;justify-content:center;min-height:44px}
 .sys .v{color:var(--muted);font-size:15px;text-align:center}
 
 /* Converter */
@@ -356,7 +357,7 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
   <h2 id="gTitle">Графики</h2>
   <div class="g-funcs" id="gFuncs"></div>
   <div class="g-wrap">
-    <canvas id="gCanvas" aria-label="График функций. Двигайте пальцем, разводите двумя пальцами для масштаба, коснитесь линии — покажу точку"></canvas>
+    <canvas id="gCanvas" aria-label="График функций. Двигайте пальцем, разводите двумя пальцами для масштаба. Кружками отмечены пересечения графиков и осей, коснитесь — покажу координаты"></canvas>
     <div class="g-tools">
       <button class="icon-btn" id="gZoomIn" type="button" aria-label="Приблизить">+</button>
       <button class="icon-btn" id="gZoomOut" type="button" aria-label="Отдалить">−</button>
@@ -381,9 +382,9 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
   <div id="solveQuad" class="out-card" hidden>
     <div class="muted">Квадратное уравнение <b>ax² + bx + c = 0</b>. Покажу дискриминант и корни, в том числе комплексные.</div>
     <div class="sys" style="grid-template-columns:1fr 1fr 1fr">
-      <div class="field"><label>a</label><input class="inp" id="qa" inputmode="decimal" value="1" aria-label="a"></div>
-      <div class="field"><label>b</label><input class="inp" id="qb" inputmode="decimal" value="-5" aria-label="b"></div>
-      <div class="field"><label>c</label><input class="inp" id="qc" inputmode="decimal" value="6" aria-label="c"></div>
+      <div class="field"><label>a</label><div class="mfield boxes" id="qa" role="textbox" tabindex="0" aria-label="a"></div></div>
+      <div class="field"><label>b</label><div class="mfield boxes" id="qb" role="textbox" tabindex="0" aria-label="b"></div></div>
+      <div class="field"><label>c</label><div class="mfield boxes" id="qc" role="textbox" tabindex="0" aria-label="c"></div></div>
     </div>
   </div>
   <div id="solveSys" class="out-card" hidden>
@@ -1578,6 +1579,7 @@ function makeField(el,expr,onChange,onEnter){
     const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody,.rbody,.ridx,.lsub,.larg');
     let pos=f.expr.length;
     if(ch){const i=+ch.dataset.i,r=ch.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?i+1:i}else if(slot)pos=+slot.dataset.pos;
+    if(PAD.f!==f)pos=f.expr.length; // first tap: caret at the end
     f.cur=Math.max(0,Math.min(f.expr.length,pos));openPad(f);
   });
   el.addEventListener('keydown',e=>{
@@ -1646,7 +1648,8 @@ function closePad(){
   setTimeout(gDraw,30);
 }
 // tapping outside a field and the keypad closes it
-document.addEventListener('pointerdown',e=>{if(PAD.f&&!e.target.closest('#fpad,.mfield,.field.active')&&!e.target.closest('#gCanvas,.g-tools'))closePad()});
+// closed on click (not on touch start), so the tapped button gets its click before the layout moves
+document.addEventListener('click',e=>{if(PAD.f&&!e.target.closest('#fpad,.mfield,.field.active,#gCanvas,.g-tools,.tab'))closePad()});
 
 /* ================= graphs ================= */
 const GKEY='eng-calc-graph';
@@ -1663,6 +1666,35 @@ function gCompile(){
     return bad?'bad':src;
   });
   document.querySelectorAll('#gFuncs .field').forEach((f,i)=>f.classList.toggle('bad',gCompiled[i]==='bad'));
+}
+function gBisect(f,a,b){
+  let fa=f(a);
+  for(let k=0;k<60;k++){const m=(a+b)/2,fm=f(m);if(!isFinite(fm))return null;if(fm===0)return m;if((fa<0)===(fm<0)){a=m;fa=fm}else b=m}
+  return (a+b)/2;
+}
+const snapX=x=>{const r=Math.round(x);return Math.abs(x-r)<1e-9?r:Math.abs(x)<1e-12?0:x};
+function gSpecial(YS,x0,W){
+  const pts=[],live=gCompiled.map((s,i)=>s&&s!=='bad'&&YS[i]?i:-1).filter(i=>i>=0);
+  const px2x=px=>x0+px/G.sc;
+  const scan=(arr,fn,kind,i,j)=>{
+    for(let px=0;px<arr.length-1&&pts.length<60;px++){
+      const a=arr[px],b=arr[px+1];if(!isFinite(a)||!isFinite(b))continue;
+      if(a===0||(a<0)!==(b<0)){
+        let x=a===0?px2x(px):gBisect(fn,px2x(px),px2x(px+1));if(x===null)continue;x=snapX(x);
+        const r=fn(x),y=gVal(gCompiled[i],x);if(!isFinite(r)||!isFinite(y)||Math.abs(r)>1e-6*(1+Math.abs(y)))continue; // a jump, not a crossing
+        if(!pts.some(q=>q.kind===kind&&q.i===i&&Math.abs(q.x-x)<1e-9*(1+Math.abs(x))))pts.push({kind,i,j,x,y:Math.abs(y)<1e-12?0:y});
+      }
+    }
+  };
+  for(let a=0;a<live.length;a++)for(let b=a+1;b<live.length;b++){
+    const i=live[a],j=live[b],d=YS[i].map((v,k)=>v-YS[j][k]);
+    scan(d,x=>gVal(gCompiled[i],x)-gVal(gCompiled[j],x),'cross',i,j);
+  }
+  for(const i of live){
+    scan(YS[i],x=>gVal(gCompiled[i],x),'zero',i);
+    const y=gVal(gCompiled[i],0);if(isFinite(y)&&!pts.some(q=>q.x===0&&q.y===y))pts.push({kind:'yint',i,x:0,y});
+  }
+  return pts;
 }
 function gVal(src,x){try{const v=evaluate(src,{angle:'rad',ans:S.ans,x});return typeof v==='number'?v:NaN}catch(e){return NaN}}
 function gRenderFuncs(){
@@ -1710,12 +1742,14 @@ function gDraw(){
   for(let y=Math.ceil(y0/st)*st;y<=y1;y+=st){if(Math.abs(y)<st/2)continue;c.fillText(gNum(y),lx,Y(y))}
   c.textAlign='left';c.textBaseline='top';c.fillText('0',ax+4,ay+4);
   // functions
+  const YS=[];
   gCompiled.forEach((src,i)=>{
     if(!src||src==='bad')return;
+    const ys=YS[i]=[];
     c.strokeStyle=gColor(i);c.lineWidth=2.5;c.lineJoin='round';c.beginPath();
     let pen=false,prev=null;
     for(let px=0;px<=W;px+=1){
-      const x=x0+px/G.sc,y=gVal(src,x);
+      const x=x0+px/G.sc,y=gVal(src,x);ys.push(y);
       if(!isFinite(y)){pen=false;prev=null;continue}
       let py=Y(y);
       if(prev!==null&&Math.abs(py-prev)>H*1.2&&((py<0||py>H)||(prev<0||prev>H))){pen=false} // asymptote
@@ -1725,6 +1759,17 @@ function gDraw(){
     }
     c.stroke();
   });
+  // special points: crossings of graphs, zeros, y-intercepts
+  G.pts=gSpecial(YS,x0,W);
+  for(const q of G.pts){
+    const px=X(q.x),py=Y(q.y);if(px<-5||px>W+5||py<-5||py>H+5)continue;
+    c.beginPath();c.arc(px,py,q.kind==='cross'?5.5:4.5,0,7);c.fillStyle=cs.getPropertyValue('--card').trim()||'#fff';c.fill();
+    c.lineWidth=2.5;c.strokeStyle=q.kind==='cross'?on:gColor(q.i);c.stroke();
+  }
+  if(G.trace&&G.trace.pt){
+    const q=G.trace.pt;c.beginPath();c.arc(X(q.x),Y(q.y),7,0,7);c.fillStyle=on;c.fill();
+    $('gInfo').textContent=(q.kind==='cross'?'Пересечение':q.kind==='zero'?'Ноль функции':'Пересечение с осью y')+':  x = '+out(round15(q.x),false)+'   y = '+out(round15(q.y),false);return;
+  }
   if(G.trace){
     const t=G.trace,src=gCompiled[t.i];
     if(src&&src!=='bad'){const y=gVal(src,t.x);if(isFinite(y)){
@@ -1759,6 +1804,9 @@ function gEnd(e){
     const now=Date.now();
     if(now-gLastTap<300){gHome();gLastTap=0}
     else{gLastTap=now;const r=gc.getBoundingClientRect(),x=G.cx+(e.clientX-r.left-r.width/2)/G.sc,yc=G.cy-(e.clientY-r.top-r.height/2)/G.sc;
+      const sx=e.clientX-r.left,sy=e.clientY-r.top;let near=null;
+      for(const q of G.pts||[]){const d=Math.hypot(r.width/2+(q.x-G.cx)*G.sc-sx,r.height/2-(q.y-G.cy)*G.sc-sy);if(d<26&&(!near||d<near.d))near={q,d}}
+      if(near){G.trace={pt:near.q};gDraw();return}
       let best=null;gCompiled.forEach((src,i)=>{if(!src||src==='bad')return;const y=gVal(src,x);if(isFinite(y)){const d=Math.abs(y-yc);if(!best||d<best.d)best={i,d}}});
       G.trace=best&&best.d*G.sc<60?{i:best.i,x}:null;gDraw()}
   }
@@ -1779,22 +1827,28 @@ const segSolve=$('segSolve');
 segSolve.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
   solveMode=b.dataset.v;segSolve.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   $('solveEq').hidden=solveMode!=='eq';$('solveQuad').hidden=solveMode!=='quad';$('solveSys').hidden=!solveMode.startsWith('sys');
-  if(solveMode.startsWith('sys'))buildSys(solveMode==='sys2'?2:3);
+  closePad();if(solveMode.startsWith('sys'))buildSys(solveMode==='sys2'?2:3);
   $('solveOut').hidden=true;
 }));
 const eqField=makeField($('eqIn'),'',()=>{},()=>solve());
+function chainNext(list){list.forEach((f,i)=>{f.onEnter=()=>{if(i<list.length-1)openPad(list[i+1]);else solve()}})}
+const quadFields=['qa','qb','qc'].map((id,i)=>makeField($(id),['1','−5','6'][i],null,null));
+chainNext(quadFields);
 const SYS_DEF={2:[[2,1,5],[1,-1,1]],3:[[1,1,1,6],[2,-1,1,3],[1,2,-1,2]]};
+let sysFields=[];
 function buildSys(n){
+  sysFields=[];
   const g=$('sysGrid'),V=['x','y','z'];g.innerHTML='';g.style.gridTemplateColumns=`repeat(${n},1fr) auto 1fr`;
   $('sysHint').innerHTML=n===2?'Система <b>a·x + b·y = c</b>. Впишите коэффициенты каждой строки.':'Система <b>a·x + b·y + c·z = d</b>. Впишите коэффициенты каждой строки.';
   for(let r=0;r<n;r++){
     for(let k=0;k<=n;k++){
       if(k===n){const eq=document.createElement('span');eq.className='v';eq.textContent='=';g.appendChild(eq)}
       const f=document.createElement('div');f.className='field';
-      f.innerHTML=`${k<n?`<label>${V[k]}</label>`:''}<input class="inp" inputmode="decimal" aria-label="${k<n?'Коэффициент при '+V[k]:'Правая часть'}, строка ${r+1}">`;
-      f.querySelector('input').value=SYS_DEF[n][r][k];g.appendChild(f);
+      f.innerHTML=`${k<n?`<label>${V[k]}</label>`:''}<div class="mfield boxes" role="textbox" tabindex="0" aria-label="${k<n?'Коэффициент при '+V[k]:'Правая часть'}, строка ${r+1}"></div>`;
+      g.appendChild(f);sysFields.push(makeField(f.querySelector('.mfield'),String(SYS_DEF[n][r][k]).replace('-','−'),null,null));
     }
   }
+  chainNext(sysFields);
 }
 function num(str,label){ // a box with a number or expression
   const t=prepFormula(String(str));if(t==='')return 0;
@@ -1807,7 +1861,7 @@ function ansBtn(label,v){
   b.addEventListener('click',()=>{setTab(0);insertValue(round15(v));snack('Вставлено в калькулятор')});
   return b;
 }
-function showOut(nodes){const o=$('solveOut');o.hidden=false;o.innerHTML='';nodes.forEach(n=>o.appendChild(typeof n==='string'?Object.assign(document.createElement('div'),{className:'muted',innerHTML:n}):n))}
+function showOut(nodes){const o=$('solveOut');o.hidden=false;o.innerHTML='';setTimeout(()=>o.scrollIntoView({block:'nearest',behavior:'smooth'}),40);nodes.forEach(n=>o.appendChild(typeof n==='string'?Object.assign(document.createElement('div'),{className:'muted',innerHTML:n}):n))}
 const row=items=>{const d=document.createElement('div');d.className='ans-row';items.forEach(x=>d.appendChild(x));return d};
 const errBox=m=>{const d=document.createElement('div');d.className='ans err';d.textContent=m;return d};
 function findRoots(f){
@@ -1853,7 +1907,7 @@ function solve(){
       return;
     }
     if(solveMode==='quad'){
-      const a=num($('qa').value,'a'),b=num($('qb').value,'b'),c=num($('qc').value,'c');
+      closePad();const a=num(quadFields[0].expr,'a'),b=num(quadFields[1].expr,'b'),c=num(quadFields[2].expr,'c');
       if(a===0){
         if(b===0){showOut([c===0?'Любое x подходит: 0 = 0.':'Решений нет: получается '+out(c,false)+' = 0.']);return}
         showOut(['a = 0, поэтому уравнение линейное: bx + c = 0.',row([ansBtn('x =',-c/b)])]);return;
@@ -1867,8 +1921,8 @@ function solve(){
       showOut([head+' < 0. Действительных корней нет, есть два комплексных:',row([ansBtn('x₁ =',z1),ansBtn('x₂ =',z2)])]);
       return;
     }
-    const n=solveMode==='sys2'?2:3,ins=[...$('sysGrid').querySelectorAll('input')];
-    const M=[];for(let r=0;r<n;r++){M.push(ins.slice(r*(n+1),(r+1)*(n+1)).map((el,k)=>num(el.value,(k<n?['x','y','z'][k]:'=')+', строка '+(r+1))))}
+    closePad();const n=solveMode==='sys2'?2:3,ins=sysFields;
+    const M=[];for(let r=0;r<n;r++){M.push(ins.slice(r*(n+1),(r+1)*(n+1)).map((el,k)=>num(el.expr,(k<n?['x','y','z'][k]:'=')+', строка '+(r+1))))}
     for(let c=0;c<n;c++){
       let piv=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[piv][c]))piv=r;
       if(Math.abs(M[piv][c])<1e-12){showOut([errBox('У системы нет единственного решения: решений нет или их бесконечно много.')]);return}
