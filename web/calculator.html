@@ -64,7 +64,19 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .badge:focus-visible{outline:2px solid var(--focus)}
 .expr{width:100%;border:0;background:transparent;color:var(--on);font:inherit;font-size:44px;line-height:1.25;text-align:right;padding:0 2px;
   caret-color:var(--eq);font-variant-numeric:tabular-nums;outline:none;transition:font-size .28s cubic-bezier(.2,0,0,1),color .28s}
-.expr::placeholder{color:var(--muted);opacity:.6}
+.expr{white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-height:1.3em;cursor:text;display:flex;align-items:center;justify-content:flex-end}
+.expr::-webkit-scrollbar{display:none}
+.expr .ln{display:inline-flex;align-items:center;margin-left:auto}
+.caret{display:inline-block;width:2px;height:1em;background:var(--eq);margin:0 -1px;animation:blink 1.06s steps(1) infinite;flex:none}
+.done .caret{display:none}
+@keyframes blink{50%{opacity:0}}
+.frac{display:inline-flex;flex-direction:column;align-items:stretch;font-size:.6em;margin:0 .12em;line-height:1.1;vertical-align:middle}
+.frac>.num,.frac>.den{display:flex;justify-content:center;align-items:center;min-width:.8em;min-height:1.05em;padding:0 .15em}
+.frac>.num{border-bottom:max(2px,.06em) solid currentColor;padding-bottom:.08em}
+.frac>.den{padding-top:.08em}
+.expr .frac>.num:not(:has(.ch)),.expr .frac>.den:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-3px;border-radius:4px}
+.result .frac{font-size:.62em}
+.hist-expr .frac,.hist-res .frac{font-size:.7em}
 .expr:focus-visible{box-shadow:inset 0 -2px 0 var(--focus)}
 .result{display:block;min-height:1.3em;font-size:26px;line-height:1.3;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;padding:0 2px;border-radius:12px;
@@ -87,7 +99,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 
 /* Keypads: all functions on one screen */
 .pads{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain}
-.sci{display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
+.sci{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
 .base{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,minmax(50px,1fr));gap:var(--gap);flex:1.25 1 auto}
 .key{position:relative;overflow:hidden;border:0;border-radius:999px;font:inherit;display:flex;align-items:center;justify-content:center;
   min-width:0;min-height:38px;padding:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;white-space:nowrap;
@@ -110,7 +122,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
   .app{padding-block:12px 20px}
   .display{min-height:150px}
   .pads{flex:0 0 auto;height:min(64vh,540px);flex-direction:row;gap:24px;overflow:visible}
-  .sci{flex:5 1 0;grid-template-rows:repeat(5,1fr);grid-auto-rows:auto}
+  .sci{flex:6 1 0;grid-template-rows:repeat(4,1fr);grid-auto-rows:auto}
   .base{flex:4 1 0;grid-template-rows:repeat(5,1fr)}
   .key.sci{font-size:16px}
 }
@@ -197,7 +209,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
       <span class="badge" id="fracBadge" hidden title="Результат дробью">a⁄b</span>
       <span class="badge" id="memBadge" hidden title="В памяти есть число">M</span>
     </div>
-    <input id="expr" class="expr" type="text" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="0" aria-label="Выражение">
+    <div id="expr" class="expr" role="textbox" tabindex="0" aria-label="Выражение"></div>
     <output id="result" class="result" tabindex="0" role="button" aria-live="polite" aria-label="Результат. Нажмите, чтобы скопировать"></output>
   </section>
 
@@ -420,7 +432,9 @@ function nroot(n,x){
 const mod360=x=>((x%360)+360)%360;
 
 // ctx: {angle:'deg'|'rad'|'grad', ans:number}
+const normFrac=s=>s.replace(/⦃/g,'((').replace(/⦙/g,')⁄(').replace(/⦄/g,'))'); // 2D fraction ⦃num⦙den⦄
 function evaluate(src,ctx){
+  src=normFrac(src);
   const A=ctx.angle||'deg';
   const toks=tokenize(src);let p=0,pct=false;
   const peek=()=>toks[p],next=()=>toks[p++];
@@ -651,7 +665,7 @@ function insert(text){
         const unaryMinus=text==='−'&&!['+','−'].includes(last);
         if(!unaryMinus)before=before.slice(0,-last.length);
       }
-      if(before.endsWith('(')&&text!=='−')return;
+      if(/[(⦃⦙]$/.test(before)&&text!=='−')return;
     }
   }else if(text==='.'){
     const seg=/[\d.]*$/.exec(before)[0];
@@ -686,7 +700,12 @@ function insertEE(){
 function backspace(){
   if(S.done){beginEdit('edit');render();return}
   if(S.cur===0)return;
-  const before=S.expr.slice(0,S.cur);
+  const before=S.expr.slice(0,S.cur),last=before.slice(-1);
+  if(last==='⦄'||last==='⦙'){S.cur--;render();return} // step into the denominator / numerator
+  if(last==='⦃'){ // at the start of a numerator: remove the fraction only when it is empty
+    if(S.expr.slice(S.cur).startsWith('⦙⦄')){S.expr=before.slice(0,-1)+S.expr.slice(S.cur+2);S.cur--;render()}
+    return;
+  }
   const tok=DEL_TOKENS.find(t=>before.endsWith(t));
   const n=tok?tok.length:1;
   S.expr=before.slice(0,-n)+S.expr.slice(S.cur);S.cur-=n;render();
@@ -695,6 +714,8 @@ function delForward(){
   if(S.done){beginEdit('edit')}
   if(S.cur>=S.expr.length){render();return}
   const after=S.expr.slice(S.cur);
+  if(after.startsWith('⦃⦙⦄')){S.expr=S.expr.slice(0,S.cur)+after.slice(3);render();return}
+  if('⦃⦙⦄'.includes(after[0])){S.cur++;render();return}
   const tok=DEL_TOKENS.find(t=>after.startsWith(t));
   S.expr=S.expr.slice(0,S.cur)+after.slice(tok?tok.length:1);render();
 }
@@ -706,7 +727,7 @@ function negate(){
   else while(i>0){const ch=s[i-1];if(/[\d.Eπe]/.test(ch))i--;else if((ch==='-'||ch==='+'||ch==='−')&&s[i-2]==='E')i--;else break}
   if(i===c){insert('−');return}
   const prev=s[i-1],prev2=s[i-2];
-  if(prev==='−'&&(i-1===0||/[+−×÷^(,dPC√]/.test(prev2))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
+  if(prev==='−'&&(i-1===0||/[+−×÷^(,dPC√⦃⦙]/.test(prev2))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
   else if(prev==='−'){S.expr=s.slice(0,i-1)+'+'+s.slice(i)}
   else if(prev==='+'){S.expr=s.slice(0,i-1)+'−'+s.slice(i)}
   else{S.expr=s.slice(0,i)+'−'+s.slice(i);S.cur=c+1}
@@ -717,6 +738,8 @@ function equals(){
   let src=S.expr.trim();if(!src)return;
   const open=(src.match(/\(/g)||[]).length-(src.match(/\)/g)||[]).length;
   if(open>0)src+=')'.repeat(open);
+  const openF=(src.match(/⦃/g)||[]).length-(src.match(/⦄/g)||[]).length;
+  if(openF>0)src+='⦄'.repeat(openF);
   S.expr=src;
   try{
     const v=round15(evaluate(src,ctx()));
@@ -731,6 +754,27 @@ function currentValue(){
   if(!S.expr.trim())return null;
   try{return round15(evaluate(S.expr,ctx()))}catch(e){return null}
 }
+function fracMatch(s,c,target){ // index of the ⦙/⦄ that belongs to the fraction around position c
+  let d=0;
+  for(let i=c;i<s.length;i++){const ch=s[i];
+    if(ch==='⦃')d++;
+    else if(ch==='⦄'){if(d===0)return target==='⦄'?i:-1;d--}
+    else if(ch==='⦙'&&d===0&&target==='⦙')return i;
+  }
+  return -1;
+}
+function fracKey(){
+  if(S.done)beginEdit(S.err?'fresh':'continue');
+  const s=S.expr,c=S.cur;
+  const toDen=fracMatch(s,c,'⦙');
+  if(toDen>=0){S.cur=toDen+1;render();return}          // in numerator → go to denominator
+  const out_=fracMatch(s,c,'⦄');
+  if(out_>=0){S.cur=out_+1;render();return}            // in denominator → leave the fraction
+  const m=/(\d+\.?\d*|\.\d+|Ans|π|e)$/.exec(s.slice(0,c)); // a number right before becomes the numerator
+  if(m){const st=c-m[0].length;S.expr=s.slice(0,st)+'⦃'+m[0]+'⦙⦄'+s.slice(c);S.cur=st+m[0].length+2}
+  else{S.expr=s.slice(0,c)+'⦃⦙⦄'+s.slice(c);S.cur=c+1}
+  render();
+}
 function toggleFrac(){
   if(!S.done){equals();if(!S.done)return}
   if(S.err)return;
@@ -743,7 +787,7 @@ function moveCursor(dir){
   const s=S.expr;let c=S.cur;
   if(dir<0&&c>0){const t=DEL_TOKENS.find(t=>s.slice(0,c).endsWith(t));c-=t?t.length:1}
   else if(dir>0&&c<s.length){const t=DEL_TOKENS.find(t=>s.slice(c).startsWith(t));c+=t?t.length:1}
-  S.cur=c;exprEl.focus({preventScroll:true});render();
+  S.cur=c;render();
 }
 function memAdd(sign){
   const v=currentValue();
@@ -755,7 +799,7 @@ function preview(){
   previewRaw='';
   const src=S.expr.trim();if(!src)return '';
   try{
-    const t=tokenize(src);
+    const t=tokenize(normFrac(src));
     if(t.length===1&&t[0].t==='num')return '';
     if(t.length===2&&t[0].t==='op'&&t[0].v==='-'&&t[1].t==='num')return '';
     const v=evaluate(src,ctx());previewRaw=fmt(v);return out(v);
@@ -792,7 +836,6 @@ const SCI=[
   trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
-  {k:'mod',l:'mod',a:'Остаток от деления: 7 mod 3 = 1',c:'sci',ins:'mod'},
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
   {k:'log',l:'log',a:'Десятичный логарифм (по основанию 10)',c:'sci',ins:'log('},
   {k:'logxy',l:'log<sub>x</sub>y',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
@@ -805,7 +848,7 @@ const SCI=[
   {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
   {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'abs('},
   {k:'1/x',l:'1/x',a:'Обратное число: 1/x',c:'sci',ins:'⁻¹'},
-  {k:'frac',l:sup('a')+'⁄'+'<sub>b</sub>',a:'Дробь: 3⁄4 — три четвёртых',c:'sci',ins:'⁄'},
+  {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: нажмите и введите числитель, нажмите ещё раз — знаменатель, ещё раз — выйти из дроби',c:'sci',run:fracKey},
   {k:'SD',l:'S⇔D',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
   {k:',',l:',',a:'Запятая — разделяет основание и число в logₓ',c:'sci',ins:','},
 ];
@@ -817,10 +860,8 @@ const MEM=[
   {k:'Ans',l:'Ans',a:'Ответ — результат прошлого вычисления',c:'sci',run:()=>{if(S.moreOpen)setMore(false);insert('Ans')}},
 ];
 const MORE=[
-  {k:'x³',l:'x'+sup('3'),a:'Куб числа: 2³ = 8',ins:'³'},
+  {k:'mod',l:'mod',a:'Остаток от деления: 7 mod 3 = 1',ins:'mod'},
   {k:'∛',l:'∛',a:'Кубический корень: ∛27 = 3',ins:'∛'},
-  {k:'2ˣ',l:'2'+sup('x'),a:'Два в степени: 2^10 = 1024',ins:'2^('},
-  {k:'log₂',l:'log<sub>2</sub>',a:'Логарифм по основанию 2: log₂(8) = 3',ins:'log₂('},
   {k:'sec',l:()=>S.inv?'sec'+sup('−1'):'sec',a:'Секанс = 1 ÷ cos',ins:()=>S.inv?'sec⁻¹(':'sec('},
   {k:'csc',l:()=>S.inv?'csc'+sup('−1'):'csc',a:'Косеканс = 1 ÷ sin',ins:()=>S.inv?'csc⁻¹(':'csc('},
   {k:'cot',l:()=>S.inv?'cot'+sup('−1'):'cot',a:'Котангенс = cos ÷ sin',ins:()=>S.inv?'cot⁻¹(':'cot('},
@@ -905,12 +946,32 @@ function fitSize(text,max,min,width){
   return w<=width?max:Math.max(min,Math.floor(max*width/w));
 }
 const ANGLE_BADGE={deg:'DEG',rad:'RAD',grad:'GRAD'};
+const esc=c=>c==='<'?'&lt;':c==='>'?'&gt;':c==='&'?'&amp;':c;
+// Expression → HTML with stacked fractions; caret<0 means no caret.
+function renderExpr(s,caret){
+  let h='',open=0;const CAR='<span class="caret"></span>';
+  for(let i=0;i<s.length;i++){
+    if(i===caret)h+=CAR;
+    const ch=s[i];
+    if(ch==='⦃'){h+=`<span class="frac"><span class="num" data-pos="${i+1}">`;open++}
+    else if(ch==='⦙'){h+=`</span><span class="den" data-pos="${i+1}">`}
+    else if(ch==='⦄'){if(open){h+='</span></span>';open--}}
+    else h+=`<span class="ch" data-i="${i}">${esc(ch)}</span>`;
+  }
+  if(caret===s.length)h+=CAR;
+  while(open-->0)h+='</span></span>';
+  return h;
+}
+const plainExpr=s=>s.replace(/⦃/g,'(').replace(/⦙/g,')/(').replace(/⦄/g,')');
+const fracHTML=t=>{const m=/^(−?)(\d+)⁄(\d+)$/.exec(t);return m?m[1]+`<span class="frac"><span class="num">${m[2]}</span><span class="den">${m[3]}</span></span>`:null};
+const measureText=s=>s.replace(/⦃([^⦃⦄]*)⦙?([^⦃⦄]*)⦄?/g,(m,a,b)=>'0'.repeat(Math.ceil(Math.max(a.length,b.length,1)*0.6)+1));
+let lastShown='';
 function render(){
-  if(exprEl.value!==S.expr)exprEl.value=S.expr;
-  if(document.activeElement===exprEl){try{exprEl.setSelectionRange(S.cur,S.cur)}catch(e){}}
+  exprEl.innerHTML='<span class="ln">'+renderExpr(S.expr,S.done?-1:S.cur)+'</span>';
+  exprEl.setAttribute('aria-label','Выражение: '+(plainExpr(S.expr)||'пусто'));
   dispEl.classList.toggle('done',S.done);
   const pv=S.done?(S.err?S.res:out(S.ans,S.fracView??S.set.frac)):preview();
-  resEl.textContent=pv;
+  lastShown=pv;const fh=S.done&&!S.err?fracHTML(pv):(!S.done?fracHTML(pv):null);if(fh)resEl.innerHTML=fh;else resEl.textContent=pv;
   resEl.classList.toggle('error',S.done&&S.err);
   $('angleBadge').textContent=ANGLE_BADGE[S.set.angle];
   const fb=$('fmtBadge');fb.hidden=S.set.notation==='auto';fb.textContent=S.set.notation.toUpperCase()+' '+S.set.digits;
@@ -921,23 +982,26 @@ function render(){
   const wide=innerWidth>=860,h=dispEl.clientHeight,w=dispEl.clientWidth-4;
   const big=Math.round(Math.min(wide?68:52,Math.max(30,h*0.34))),small=Math.round(big*0.52);
   if(S.done){
-    exprEl.style.fontSize=fitSize(S.expr,small,14,w)+'px';
+    exprEl.style.fontSize=fitSize(measureText(S.expr),small,14,w)+'px';
     resEl.style.fontSize=fitSize(pv,big,20,w)+'px';
   }else{
-    exprEl.style.fontSize=fitSize(S.expr,big,20,w)+'px';
+    exprEl.style.fontSize=fitSize(measureText(S.expr),big,20,w)+'px';
     resEl.style.fontSize=fitSize(pv,small,14,w)+'px';
   }
-  if(document.activeElement!==exprEl)exprEl.scrollLeft=exprEl.scrollWidth;
+  const car=exprEl.querySelector('.caret');if(car&&!S.done)car.scrollIntoView({block:'nearest',inline:'nearest'});else exprEl.scrollLeft=exprEl.scrollWidth;
 }
 
 /* caret editing in the middle */
-exprEl.addEventListener('beforeinput',e=>e.preventDefault());
-exprEl.addEventListener('pointerup',()=>{
-  if(S.done){S.done=false;S.err=false;render()}
-  setTimeout(()=>{S.cur=exprEl.selectionStart??S.expr.length},0);
+exprEl.addEventListener('click',e=>{
+  const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den');
+  let pos=S.expr.length;
+  if(ch){const i=+ch.dataset.i,r=ch.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?i+1:i}
+  else if(slot)pos=+slot.dataset.pos;
+  if(S.done){S.done=false;S.err=false}
+  S.cur=Math.max(0,Math.min(S.expr.length,pos));render();
 });
-document.addEventListener('selectionchange',()=>{if(document.activeElement===exprEl&&exprEl.selectionStart!=null)S.cur=exprEl.selectionStart});
-exprEl.addEventListener('paste',e=>{
+document.addEventListener('paste',e=>{
+  if(S.histOpen||S.setOpen||S.moreOpen)return;
   e.preventDefault();
   let t=(e.clipboardData&&e.clipboardData.getData('text'))||'';
   t=t.replace(/\*/g,'×').replace(/\//g,'÷').replace(/-/g,'−').replace(/pi/gi,'π').replace(/sqrt/gi,'√').replace(/\s+/g,'');
@@ -948,7 +1012,7 @@ exprEl.addEventListener('paste',e=>{
 
 /* copy result */
 function copyResult(){
-  const shown=resEl.textContent;
+  const shown=lastShown;
   if(!shown||(S.done&&S.err))return;
   const plain=shown.replace(/\u2009/g,'').replace(/−/g,'-').replace(/⁄/g,'/');
   if(!plain)return;
@@ -991,9 +1055,9 @@ function renderHistory(){
   S.hist.forEach(h=>{
     const shown=typeof h.v==='number'?out(h.v):h.result;
     const li=document.createElement('li');const b=document.createElement('button');
-    b.type='button';b.className='hist-item';b.setAttribute('aria-label',`${h.expr} равно ${shown}. Вставить выражение`);
-    const e=document.createElement('span');e.className='hist-expr';e.textContent=h.expr;
-    const r=document.createElement('span');r.className='hist-res';r.textContent='= '+shown;
+    b.type='button';b.className='hist-item';b.setAttribute('aria-label',`${plainExpr(h.expr)} равно ${shown}. Вставить выражение`);
+    const e=document.createElement('span');e.className='hist-expr';e.innerHTML=renderExpr(h.expr,-1);
+    const r=document.createElement('span');r.className='hist-res';const rf=fracHTML(shown);if(rf)r.innerHTML='= '+rf;else r.textContent='= '+shown;
     b.append(e,r);b.addEventListener('click',()=>{S.expr=h.expr;S.cur=h.expr.length;S.done=false;S.err=false;setHist(false);render()});
     li.appendChild(b);histList.appendChild(li);
   });
@@ -1074,7 +1138,7 @@ window.calcBack=function(){
 
 /* keyboard */
 function flash(k){const o=keyEls[k];if(!o)return;o.el.classList.add('pressed');setTimeout(()=>o.el.classList.remove('pressed'),130)}
-function viaKey(k){const o=keyEls[k];if(o){press(o.d);flash(k)}}
+function viaKey(k){const o=keyEls[k];if(o){press(o.d);flash(k)}else{const d=MORE.find(x=>x.k===k);if(d)press(d)}}
 const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.',',':',','p':'π','e':'e','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','f':'frac','\\':'frac','F':'SD','=':'=','Enter':'=','Escape':'AC'};
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
@@ -1093,10 +1157,10 @@ document.addEventListener('keydown',e=>{
   else if(k==='Delete'){delForward()}
   else if(k==='h'){setHist(true)}
   else if(k==='d'){const o=['deg','rad','grad'];S.set.angle=o[(o.indexOf(S.set.angle)+1)%3];save();render();snack('Углы: '+ANGLE_BADGE[S.set.angle])}
-  else if((k==='ArrowLeft'||k==='ArrowRight'||k==='Home'||k==='End')&&tgt!==exprEl&&!tgt.closest?.('button')){
+  else if((k==='ArrowLeft'||k==='ArrowRight'||k==='Home'||k==='End')&&!tgt.closest?.('button')){
     if(S.done&&(k==='Home'||k==='End'))return;
     if(k==='ArrowLeft'||k==='ArrowRight'){moveCursor(k==='ArrowLeft'?-1:1);e.preventDefault();return}
-    S.cur=k==='Home'?0:S.expr.length;exprEl.focus({preventScroll:true});render();
+    S.cur=k==='Home'?0:S.expr.length;render();
   }
   else if(KMAP[k]){viaKey(KMAP[k])}
   else return;
