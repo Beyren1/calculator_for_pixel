@@ -349,7 +349,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 const ERR={syntax:'Ошибка в выражении',div0:'Деление на ноль',domain:'Вне области определения',overflow:'Слишком большое число'};
 class CalcError extends Error{constructor(kind,msg){super(msg||ERR[kind]);this.kind=kind}}
 // Longer names first: the tokenizer takes the first match.
-const FN_WORDS=['arsinh','arcosh','artanh','arcsin','arccos','arctan','sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sec⁻¹','csc⁻¹','cot⁻¹',
+const FN_WORDS=['arsinh','arcosh','artanh','arcsin','arccos','arctan','arccot','sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sec⁻¹','csc⁻¹','cot⁻¹',
   'sinh','cosh','tanh','sin','cos','tan','sec','csc','cot','logₓ','log₂','log','lg','ln','abs','floor','ceil','round','sgn','модуль','вниз','вверх','округл','знак','НОД','НОК','√','∛'];
 const TWO_ARG=new Set(['logₓ','НОД','НОК']);
 const NUM_RE=/^(\d+\.?\d*|\.\d+)(E[+\-−]?\d+)?/;
@@ -473,7 +473,7 @@ function evaluate(src,ctx){
       case 'tan⁻¹':case 'arctan':return fromRad(Math.atan(x));
       case 'sec⁻¹':if(Math.abs(x)<1)throw new CalcError('domain');return fromRad(Math.acos(1/x));
       case 'csc⁻¹':if(Math.abs(x)<1)throw new CalcError('domain');return fromRad(Math.asin(1/x));
-      case 'cot⁻¹':return fromRad(x===0?Math.PI/2:Math.atan(1/x));
+      case 'cot⁻¹':case 'arccot':return fromRad(x===0?Math.PI/2:Math.atan(1/x));
       case 'sinh':return chk(Math.sinh(x));
       case 'cosh':return chk(Math.cosh(x));
       case 'tanh':return Math.tanh(x);
@@ -840,7 +840,7 @@ const BASE=[
   {k:'.',l:'.<small class="alt">,</small>',a:'Десятичная точка. Удерживайте — запятая между аргументами',c:'digit',ins:'.',long:()=>{insert(',');snack('Запятая')}},
   {k:'=',l:'=',a:'Равно',c:'eq',run:equals},
 ];
-const INV_NAME={sin:'arcsin',cos:'arccos',tan:'arctan',sinh:'arsinh',cosh:'arcosh',tanh:'artanh'};
+const INV_NAME={sin:'arcsin',cos:'arccos',tan:'arctan',cot:'arccot',sinh:'arsinh',cosh:'arcosh',tanh:'artanh'};
 const trig=(n,ru,ruInv)=>({k:n,c:'sci',
   l:()=>S.inv?(INV_NAME[n].length>6?'<span style="font-size:13px">'+INV_NAME[n]+'</span>':INV_NAME[n]):n,
   a:()=>S.inv?ruInv:ru,
@@ -848,22 +848,22 @@ const trig=(n,ru,ruInv)=>({k:n,c:'sci',
 const SCI=[
   {k:'inv',l:'Обр',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
   trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
+  trig('cot','Котангенс = cos ÷ sin','Арккотангенс — угол по котангенсу'),
   {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
-  {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
   trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
   {k:'log',l:'lg',a:'Десятичный логарифм (по основанию 10): lg(100) = 2',c:'sci',ins:'lg('},
-  {k:'logxy',l:'log<sub>a</sub>b',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
+  {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
   {k:'x²',l:'x'+sup('2'),a:'Квадрат числа',c:'sci',ins:'²'},
   {k:'xʸ',l:'x'+sup('y'),a:'Степень: число, потом xʸ и показатель; выйти из степени — кнопкой ›',c:'sci',run:()=>insertPow('')},
   {k:'√',l:'√',a:'Квадратный корень',c:'sci',ins:'√'},
   {k:'ⁿ√',l:sup('y')+'√x',a:'Корень любой степени: 3ⁿ√8 = 2 (сначала степень корня, потом число)',c:'sci',ins:'ⁿ√'},
   {k:'eˣ',l:'e'+sup('x'),a:'e в степени x',c:'sci',run:()=>insertPow('e')},
   {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',run:()=>insertPow('10')},
+  {k:'logxy',l:'log<sub>a</sub>b',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
   {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
-  {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'модуль('},
   {k:'(',l:'(',a:'Открыть скобку',c:'sci',ins:'('},
   {k:')',l:')',a:'Закрыть скобку',c:'sci',ins:')'},
   {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: введите числитель, кнопкой › перейдите в знаменатель, ещё раз › — выйти. Дробь можно вставить внутрь другой дроби',c:'sci',run:fracKey},
@@ -877,6 +877,7 @@ const MEM=[
   {k:'Ans',l:'Отв',a:'Ответ — результат прошлого вычисления',c:'sci',run:()=>{if(S.moreOpen)setMore(false);insert('Отв')}},
 ];
 const MORE=[
+  {k:'|x|',l:'|x|',a:'Модуль — число без знака: |−3| = 3',ins:'модуль('},
   {k:'mod',l:'Остаток',a:'Остаток от деления: 7 ост 3 = 1',ins:'ост'},
   {k:'°',l:'°',a:'Градусы, даже в режиме радиан: sin(30°) = 0.5',ins:'°'},
   {k:'НОД',l:'НОД',a:'Наибольший общий делитель: НОД(12,18) = 6',ins:'НОД('},
