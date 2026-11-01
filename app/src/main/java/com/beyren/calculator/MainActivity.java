@@ -23,6 +23,7 @@ import androidx.webkit.WebViewAssetLoader;
 public class MainActivity extends Activity {
     private static final String START_URL = "https://appassets.androidplatform.net/assets/index.html";
     private WebView web;
+    private android.content.SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +34,13 @@ public class MainActivity extends Activity {
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .build();
 
+        // Paint the window and the WebView in the page's own background right away,
+        // and show the WebView only once the page has drawn, so there is no white flash.
+        prefs = getSharedPreferences("calc", MODE_PRIVATE);
+        int bg = applyBars(prefs.getString("theme", "auto"));
         web = new WebView(this);
+        web.setBackgroundColor(bg);
+        web.setVisibility(View.INVISIBLE);
         setContentView(web);
 
         WebSettings s = web.getSettings();
@@ -47,6 +54,16 @@ public class MainActivity extends Activity {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return loader.shouldInterceptRequest(request.getUrl());
+            }
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                view.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                view.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -72,7 +89,7 @@ public class MainActivity extends Activity {
     }
 
     /** Match the system bars to the theme chosen inside the calculator. */
-    private void applyBars(String theme) {
+    private int applyBars(String theme) {
         boolean dark;
         if ("dark".equals(theme)) dark = true;
         else if ("light".equals(theme)) dark = false;
@@ -86,6 +103,8 @@ public class MainActivity extends Activity {
         int light = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         flags = dark ? (flags & ~light) : (flags | light);
         w.getDecorView().setSystemUiVisibility(flags);
+        if (web != null) web.setBackgroundColor(bg);
+        return bg;
     }
 
     @Override
@@ -110,6 +129,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void setTheme(String theme) {
+            prefs.edit().putString("theme", theme).apply();
             runOnUiThread(() -> applyBars(theme));
         }
 
