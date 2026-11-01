@@ -203,9 +203,9 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 <main class="app" id="app">
   <section class="display" id="display" aria-label="Дисплей">
     <div class="status">
-      <button class="badge" id="angleBadge" type="button" aria-label="Единицы углов. Открыть настройки">DEG</button>
+      <button class="badge" id="angleBadge" type="button" aria-label="Единицы углов. Открыть настройки">ГРАДУСЫ</button>
       <button class="badge" id="fmtBadge" type="button" hidden aria-label="Формат результата. Открыть настройки"></button>
-      <span class="badge" id="invBadge" hidden>INV</span>
+      <span class="badge" id="invBadge" hidden>ОБР</span>
       <span class="badge" id="fracBadge" hidden title="Результат дробью">a⁄b</span>
       <span class="badge" id="memBadge" hidden title="В памяти есть число">M</span>
     </div>
@@ -264,7 +264,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
   <div class="more-body">
     <div class="group">
       <h3>Память</h3>
-      <p>Отложите число, чтобы вставить его позже. M+ прибавляет текущий результат к памяти, M− вычитает, MR вставляет, MC стирает. Ans — ответ прошлого вычисления.</p>
+      <p>Отложите число, чтобы вставить его позже. M+ прибавляет текущий результат к памяти, M− вычитает, MR вставляет, MC стирает. Отв — ответ прошлого вычисления.</p>
       <div class="mem-value empty" id="memValue">Пусто</div>
       <div class="mem-row" id="memRow"></div>
     </div>
@@ -287,9 +287,9 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
     <div class="group">
       <h3>Единицы углов</h3>
       <div class="seg" id="segAngle" role="group" aria-label="Единицы углов">
-        <button type="button" data-v="deg">Градусы<small>DEG · 360°</small></button>
-        <button type="button" data-v="rad">Радианы<small>RAD · 2π</small></button>
-        <button type="button" data-v="grad">Грады<small>GRAD · 400</small></button>
+        <button type="button" data-v="deg">Градусы<small>круг 360°</small></button>
+        <button type="button" data-v="rad">Радианы<small>круг 2π</small></button>
+        <button type="button" data-v="grad">Грады<small>круг 400</small></button>
       </div>
       <p>В чём считать углы в sin, cos, tan. В школе обычно градусы: sin(30) = 0.5.</p>
     </div>
@@ -298,9 +298,9 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
       <h3>Запись результата</h3>
       <div class="seg" id="segNotation" role="group" aria-label="Запись результата">
         <button type="button" data-v="auto">Авто</button>
-        <button type="button" data-v="fix">FIX</button>
-        <button type="button" data-v="sci">SCI</button>
-        <button type="button" data-v="eng">ENG</button>
+        <button type="button" data-v="fix">Фикс.</button>
+        <button type="button" data-v="sci">Научн.</button>
+        <button type="button" data-v="eng">Инж.</button>
       </div>
       <p id="notationHint"></p>
       <div class="row">
@@ -348,7 +348,7 @@ const ERR={syntax:'Ошибка в выражении',div0:'Деление на
 class CalcError extends Error{constructor(kind){super(ERR[kind]);this.kind=kind}}
 // Longer names first: the tokenizer takes the first match.
 const FN_WORDS=['sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sec⁻¹','csc⁻¹','cot⁻¹',
-  'sinh','cosh','tanh','sin','cos','tan','sec','csc','cot','logₓ','log₂','log','ln','abs','floor','ceil','round','sgn','НОД','НОК','√','∛'];
+  'sinh','cosh','tanh','sin','cos','tan','sec','csc','cot','logₓ','log₂','log','lg','ln','abs','floor','ceil','round','sgn','модуль','вниз','вверх','округл','знак','НОД','НОК','√','∛'];
 const TWO_ARG=new Set(['logₓ','НОД','НОК']);
 const NUM_RE=/^(\d+\.?\d*|\.\d+)(E[+\-−]?\d+)?/;
 
@@ -369,7 +369,9 @@ function tokenize(s){
     if(w){out.push({t:'fn',v:w});i+=w.length;continue}
     if(s.startsWith('ⁿ√',i)){out.push({t:'op',v:'root'});i+=2;continue}
     if(s.startsWith('mod',i)){out.push({t:'op',v:'mod'});i+=3;continue}
+    if(s.startsWith('ост',i)){out.push({t:'op',v:'mod'});i+=3;continue}
     if(s.startsWith('Ans',i)){out.push({t:'const',v:'Ans'});i+=3;continue}
+    if(s.startsWith('Отв',i)){out.push({t:'const',v:'Ans'});i+=3;continue}
     if(s.startsWith('⁻¹',i)){out.push({t:'post',v:'inv'});i+=2;continue}
     switch(ch){
       case 'π':case 'e':out.push({t:'const',v:ch});break;
@@ -477,16 +479,16 @@ function evaluate(src,ctx){
       case 'cosh⁻¹':if(x<1)throw new CalcError('domain');return chk(Math.acosh(x));
       case 'tanh⁻¹':if(Math.abs(x)>=1)throw new CalcError('domain');return Math.atanh(x);
       case 'ln':if(x<=0)throw new CalcError('domain');return Math.log(x);
-      case 'log':if(x<=0)throw new CalcError('domain');return Math.log10(x);
+      case 'log':case 'lg':if(x<=0)throw new CalcError('domain');return Math.log10(x);
       case 'log₂':if(x<=0)throw new CalcError('domain');return Math.log2(x);
       case 'logₓ':{const b=args[0],y=args[1];if(b<=0||b===1||y<=0)throw new CalcError('domain');return chk(Math.log(y)/Math.log(b))}
       case '√':if(x<0)throw new CalcError('domain');return Math.sqrt(x);
       case '∛':return Math.cbrt(x);
-      case 'abs':return Math.abs(x);
-      case 'floor':return Math.floor(x);
-      case 'ceil':return Math.ceil(x);
-      case 'round':return Math.sign(x)*Math.round(Math.abs(x));
-      case 'sgn':return Math.sign(x);
+      case 'abs':case 'модуль':return Math.abs(x);
+      case 'floor':case 'вниз':return Math.floor(x);
+      case 'ceil':case 'вверх':return Math.ceil(x);
+      case 'round':case 'округл':return Math.sign(x)*Math.round(Math.abs(x));
+      case 'sgn':case 'знак':return Math.sign(x);
       case 'НОД':return gcd(intOnly(args[0]),intOnly(args[1]));
       case 'НОК':return lcm(intOnly(args[0]),intOnly(args[1]));
     }
@@ -642,9 +644,9 @@ const ctx=()=>({angle:S.set.angle,ans:S.ans});
 function buzz(ms){if(!S.set.haptics)return;try{if(window.AndroidBridge)window.AndroidBridge.vibrate(ms);else if(navigator.vibrate)navigator.vibrate(ms)}catch(_){}}
 
 /* ---------- editing ---------- */
-const BIN=['+','−','×','÷','^','mod','ⁿ√','P','C','⁄'];
+const BIN=['+','−','×','÷','^','mod','ост','ⁿ√','P','C','⁄'];
 const CONT=new Set([...BIN,'²','³','!','%','°','⁻¹',')']);
-const DEL_TOKENS=[...FN_WORDS.filter(f=>f!=='√'&&f!=='∛').map(f=>f+'('),'ⁿ√','⁻¹','Ans','mod'].sort((a,b)=>b.length-a.length);
+const DEL_TOKENS=[...FN_WORDS.filter(f=>f!=='√'&&f!=='∛').map(f=>f+'('),'ⁿ√','⁻¹','Ans','Отв','mod','ост'].sort((a,b)=>b.length-a.length);
 
 function beginEdit(kind){
   if(!S.done)return;
@@ -658,7 +660,7 @@ function insert(text){
   let before=S.expr.slice(0,S.cur);const after=S.expr.slice(S.cur);
   if(BIN.includes(text)){
     if(before===''){
-      if(text!=='−'){if(S.hist.length)before='Ans';else return}
+      if(text!=='−'){if(S.hist.length)before='Отв';else return}
     }else{
       const last=BIN.find(o=>before.endsWith(o));
       if(last){
@@ -687,7 +689,7 @@ function smartParen(){
   if(S.done){beginEdit('fresh')}
   const before=S.expr.slice(0,S.cur);
   const open=(before.match(/\(/g)||[]).length-(before.match(/\)/g)||[]).length;
-  insert(open>0&&/([\d.)πe²³°!%¹]|Ans)$/.test(before)?')':'(');
+  insert(open>0&&/([\d.)πe²³°!%¹]|Ans|Отв)$/.test(before)?')':'(');
 }
 function insertEE(){
   if(S.done)beginEdit(S.err?'fresh':'continue');
@@ -723,7 +725,7 @@ function clearAll(){S.expr='';S.cur=0;S.done=false;S.err=false;S.res='';render()
 function negate(){
   if(S.done){if(S.err)return;beginEdit('continue')}
   const s=S.expr,c=S.cur;let i=c;
-  if(s.slice(0,c).endsWith('Ans'))i=c-3;
+  if(/(Ans|Отв)$/.test(s.slice(0,c)))i=c-3;
   else while(i>0){const ch=s[i-1];if(/[\d.Eπe]/.test(ch))i--;else if((ch==='-'||ch==='+'||ch==='−')&&s[i-2]==='E')i--;else break}
   if(i===c){insert('−');return}
   const prev=s[i-1],prev2=s[i-2];
@@ -770,7 +772,7 @@ function fracKey(){
   if(toDen>=0){S.cur=toDen+1;render();return}          // in numerator → go to denominator
   const out_=fracMatch(s,c,'⦄');
   if(out_>=0){S.cur=out_+1;render();return}            // in denominator → leave the fraction
-  const m=/(\d+\.?\d*|\.\d+|Ans|π|e)$/.exec(s.slice(0,c)); // a number right before becomes the numerator
+  const m=/(\d+\.?\d*|\.\d+|Ans|Отв|π|e)$/.exec(s.slice(0,c)); // a number right before becomes the numerator
   if(m){const st=c-m[0].length;S.expr=s.slice(0,st)+'⦃'+m[0]+'⦙⦄'+s.slice(c);S.cur=st+m[0].length+2}
   else{S.expr=s.slice(0,c)+'⦃⦙⦄'+s.slice(c);S.cur=c+1}
   render();
@@ -809,9 +811,9 @@ function preview(){
 /* ---------- keys ---------- */
 const sup=s=>`<sup>${s}</sup>`;
 const BASE=[
-  {k:'AC',l:'AC',a:'Очистить всё',c:'util',run:clearAll},
-  {k:'()',l:'( )',a:'Скобки',c:'op',run:smartParen},
-  {k:'%',l:'%',a:'Процент',c:'op',ins:'%'},
+  {k:'AC',l:'Сброс',a:'Очистить всё',c:'util',run:clearAll},
+  {k:'(',l:'(',a:'Открыть скобку',c:'op',ins:'('},
+  {k:')',l:')',a:'Закрыть скобку',c:'op',ins:')'},
   {k:'÷',l:'÷',a:'Разделить',c:'op',ins:'÷'},
   ...['7','8','9'].map(d=>({k:d,l:d,a:d,c:'digit',ins:d})),
   {k:'×',l:'×',a:'Умножить',c:'op',ins:'×'},
@@ -829,7 +831,7 @@ const trig=(n,ru,ruInv)=>({k:n,c:'sci',
   a:()=>S.inv?ruInv:ru,
   ins:()=>S.inv?n+'⁻¹(':n+'('});
 const SCI=[
-  {k:'inv',l:'Inv',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
+  {k:'inv',l:'Обр',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
   trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
   {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
   {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
@@ -837,8 +839,8 @@ const SCI=[
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
-  {k:'log',l:'log',a:'Десятичный логарифм (по основанию 10)',c:'sci',ins:'log('},
-  {k:'logxy',l:'log<sub>x</sub>y',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
+  {k:'log',l:'lg',a:'Десятичный логарифм (по основанию 10): lg(100) = 2',c:'sci',ins:'lg('},
+  {k:'logxy',l:'log<sub>a</sub>b',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
   {k:'x²',l:'x'+sup('2'),a:'Квадрат числа',c:'sci',ins:'²'},
   {k:'xʸ',l:'x'+sup('y'),a:'Любая степень: 2^10 = 1024',c:'sci',ins:'^'},
   {k:'√',l:'√',a:'Квадратный корень',c:'sci',ins:'√'},
@@ -846,10 +848,10 @@ const SCI=[
   {k:'eˣ',l:'e'+sup('x'),a:'e в степени x',c:'sci',ins:'e^('},
   {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',ins:'10^('},
   {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
-  {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'abs('},
-  {k:'1/x',l:'1/x',a:'Обратное число: 1/x',c:'sci',ins:'⁻¹'},
+  {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'модуль('},
+  {k:'%',l:'%',a:'Процент: 200 + 10% = 220',c:'sci',ins:'%'},
   {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: нажмите и введите числитель, нажмите ещё раз — знаменатель, ещё раз — выйти из дроби',c:'sci',run:fracKey},
-  {k:'SD',l:'S⇔D',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
+  {k:'SD',l:'<span style="font-size:12px;line-height:1.1;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
   {k:',',l:',',a:'Запятая — разделяет основание и число в logₓ',c:'sci',ins:','},
 ];
 const MEM=[
@@ -857,23 +859,21 @@ const MEM=[
   {k:'MR',l:'MR',a:'Вставить число из памяти',c:'sci mem',run:()=>{if(S.mem===null)snack('Память пуста');else{if(S.moreOpen)setMore(false);insertValue(S.mem)}}},
   {k:'M+',l:'M+',a:'Прибавить результат к памяти',c:'sci mem',run:()=>memAdd(1)},
   {k:'M−',l:'M−',a:'Вычесть результат из памяти',c:'sci mem',run:()=>memAdd(-1)},
-  {k:'Ans',l:'Ans',a:'Ответ — результат прошлого вычисления',c:'sci',run:()=>{if(S.moreOpen)setMore(false);insert('Ans')}},
+  {k:'Ans',l:'Отв',a:'Ответ — результат прошлого вычисления',c:'sci',run:()=>{if(S.moreOpen)setMore(false);insert('Отв')}},
 ];
 const MORE=[
-  {k:'mod',l:'mod',a:'Остаток от деления: 7 mod 3 = 1',ins:'mod'},
+  {k:'mod',l:'Остаток',a:'Остаток от деления: 7 ост 3 = 1',ins:'ост'},
   {k:'°',l:'°',a:'Градусы, даже в режиме радиан: sin(30°) = 0.5',ins:'°'},
   {k:'НОД',l:'НОД',a:'Наибольший общий делитель: НОД(12,18) = 6',ins:'НОД('},
   {k:'НОК',l:'НОК',a:'Наименьшее общее кратное: НОК(4,6) = 12',ins:'НОК('},
   {k:'nCr',l:'Сочетания',a:'Сколькими способами выбрать r из n, порядок не важен: 5C2 = 10',ins:'C'},
   {k:'nPr',l:'Перестановки',a:'То же, но порядок важен: 5P2 = 20',ins:'P'},
-  {k:'floor',l:'⌊x⌋',a:'Округлить вниз: ⌊2.7⌋ = 2',ins:'floor('},
-  {k:'ceil',l:'⌈x⌉',a:'Округлить вверх: ⌈2.1⌉ = 3',ins:'ceil('},
-  {k:'round',l:'round',a:'Округлить до целого: round(2.5) = 3',ins:'round('},
-  {k:'sgn',l:'sgn',a:'Знак числа: 1, −1 или 0',ins:'sgn('},
-  {k:'EE',l:'EE',a:'Умножить на 10 в степени: 3E5 = 300 000',run:insertEE},
-  {k:'Rand',l:'Rand',a:'Случайное число от 0 до 1',run:()=>insertValue(Math.round(Math.random()*1e10)/1e10)},
-  {k:'(',l:'(',a:'Открыть скобку',ins:'('},
-  {k:')',l:')',a:'Закрыть скобку',ins:')'},
+  {k:'floor',l:'Вниз',a:'Округлить вниз: вниз(2.7) = 2',ins:'вниз('},
+  {k:'ceil',l:'Вверх',a:'Округлить вверх: вверх(2.1) = 3',ins:'вверх('},
+  {k:'round',l:'Округлить',a:'Округлить до целого: округл(2.5) = 3',ins:'округл('},
+  {k:'sgn',l:'Знак',a:'Знак числа: 1, −1 или 0',ins:'знак('},
+  {k:'EE',l:'×10'+sup('n'),a:'Умножить на 10 в степени: 3×10^5 = 300 000',run:()=>{if(S.done)beginEdit(S.err?'fresh':'continue');insert(S.expr.slice(0,S.cur)===''?'10^(':'×10^(')}},
+  {k:'Rand',l:'Случайное',a:'Случайное число от 0 до 1',run:()=>insertValue(Math.round(Math.random()*1e10)/1e10)},
 ];
 const val=f=>typeof f==='function'?f():f;
 const keyEls={};
@@ -941,7 +941,8 @@ function fitSize(text,max,min,width){
   cv.font=`400 ${max}px ${FONT}`;const w=cv.measureText(text).width+4;
   return w<=width?max:Math.max(min,Math.floor(max*width/w));
 }
-const ANGLE_BADGE={deg:'DEG',rad:'RAD',grad:'GRAD'};
+const ANGLE_BADGE={deg:'ГРАДУСЫ',rad:'РАДИАНЫ',grad:'ГРАДЫ'};
+const NOT_BADGE={fix:'ФИКС',sci:'НАУЧ',eng:'ИНЖ'};
 const esc=c=>c==='<'?'&lt;':c==='>'?'&gt;':c==='&'?'&amp;':c;
 // Expression → HTML with stacked fractions; caret<0 means no caret.
 function renderExpr(s,caret){
@@ -970,7 +971,7 @@ function render(){
   lastShown=pv;const fh=S.done&&!S.err?fracHTML(pv):(!S.done?fracHTML(pv):null);if(fh)resEl.innerHTML=fh;else resEl.textContent=pv;
   resEl.classList.toggle('error',S.done&&S.err);
   $('angleBadge').textContent=ANGLE_BADGE[S.set.angle];
-  const fb=$('fmtBadge');fb.hidden=S.set.notation==='auto';fb.textContent=S.set.notation.toUpperCase()+' '+S.set.digits;
+  const fb=$('fmtBadge');fb.hidden=S.set.notation==='auto';fb.textContent=(NOT_BADGE[S.set.notation]||'')+' '+S.set.digits;
   $('memBadge').hidden=S.mem===null;
   $('invBadge').hidden=!S.inv;
   $('fracBadge').hidden=!S.set.frac;
@@ -1083,7 +1084,7 @@ $('swHaptics').addEventListener('click',()=>{S.set.haptics=!S.set.haptics;save()
 const NOTATION_HINT={
   auto:'Столько знаков, сколько нужно. Очень большие и малые числа — в экспоненциальной записи.',
   fix:'Всегда одинаковое число знаков после точки, например 3.1416.',
-  sci:'Научная запись: одна цифра до точки и порядок, например 1.2346E4.',
+  sci:'Научная запись: одна цифра до точки и порядок, например 1.2346E4 (E4 — это ×10⁴).',
   eng:'Инженерная запись: порядок кратен трём (кило, мега, милли), например 12.3457E3.'
 };
 function renderSettings(){
@@ -1093,7 +1094,7 @@ function renderSettings(){
   $('digVal').textContent=S.set.digits;
   const auto=S.set.notation==='auto';
   $('digMinus').disabled=auto||S.set.digits<=0;$('digPlus').disabled=auto||S.set.digits>=12;
-  $('digitsHint').textContent=auto?'Работает в режимах FIX, SCI и ENG':'Сейчас: '+S.set.digits;
+  $('digitsHint').textContent=auto?'Работает в режимах «Фикс.», «Научн.» и «Инж.»':'Сейчас: '+S.set.digits;
   $('swGroup').setAttribute('aria-checked',String(S.set.group));
   $('swFrac').setAttribute('aria-checked',String(S.set.frac));
   $('swHaptics').setAttribute('aria-checked',String(S.set.haptics));
