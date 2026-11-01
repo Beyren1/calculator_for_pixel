@@ -87,7 +87,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 
 /* Keypads: all functions on one screen */
 .pads{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain}
-.sci{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(38px,1fr);gap:6px;flex:1 1 auto}
+.sci{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
 .base{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,minmax(50px,1fr));gap:var(--gap);flex:1.25 1 auto}
 .key{position:relative;overflow:hidden;border:0;border-radius:999px;font:inherit;display:flex;align-items:center;justify-content:center;
   min-width:0;min-height:38px;padding:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;white-space:nowrap;
@@ -98,7 +98,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .key.op{background:var(--op);color:var(--on-op);font-size:clamp(24px,3.4vh,34px)}
 .key.eq{background:var(--eq);color:var(--on-eq);font-size:clamp(26px,3.6vh,36px)}
 .key.util{background:var(--util);color:var(--on-util);font-size:clamp(20px,2.8vh,26px);font-weight:500}
-.key.sci{background:var(--sci);color:var(--on-sci);font-size:15px;border-radius:14px}
+.key.sci{background:var(--sci);color:var(--on-sci);font-size:16px;border-radius:14px}
 .key.sci:active,.key.sci.pressed{border-radius:999px}
 .key.sci[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle);font-weight:500}
 .key.mem{font-size:14px;font-weight:500}
@@ -110,7 +110,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
   .app{padding-block:12px 20px}
   .display{min-height:150px}
   .pads{flex:0 0 auto;height:min(64vh,540px);flex-direction:row;gap:24px;overflow:visible}
-  .sci{flex:6 1 0;grid-template-rows:repeat(8,1fr);grid-auto-rows:auto}
+  .sci{flex:6 1 0;grid-template-rows:repeat(5,1fr);grid-auto-rows:auto}
   .base{flex:4 1 0;grid-template-rows:repeat(5,1fr)}
   .key.sci{font-size:16px}
 }
@@ -240,7 +240,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
         <button type="button" data-v="rad">Радианы<small>RAD · 2π</small></button>
         <button type="button" data-v="grad">Грады<small>GRAD · 400</small></button>
       </div>
-      <p>Как понимать числа в sin, cos, tan и что возвращают обратные функции. Знак ° после числа всегда означает градусы.</p>
+      <p>В чём считать углы в sin, cos, tan. В школе обычно градусы: sin(30) = 0.5.</p>
     </div>
 
     <div class="group">
@@ -748,56 +748,37 @@ const trig=(n,ru,ruInv)=>({k:n,c:'sci',
 const SCI=[
   // memory
   {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();snack('Память очищена')}},
-  {k:'MR',l:'MR',a:'Вызвать число из памяти',c:'sci mem',run:()=>{if(S.mem===null)snack('Память пуста');else insertValue(S.mem)}},
-  {k:'M+',l:'M+',a:'Прибавить к памяти',c:'sci mem',run:()=>memAdd(1)},
-  {k:'M−',l:'M−',a:'Вычесть из памяти',c:'sci mem',run:()=>memAdd(-1)},
-  {k:'Ans',l:'Ans',a:'Последний результат',c:'sci',ins:'Ans'},
-  {k:'inv',l:'Inv',a:'Обратные функции',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render()}},
+  {k:'MR',l:'MR',a:'Вставить число из памяти',c:'sci mem',run:()=>{if(S.mem===null)snack('Память пуста');else insertValue(S.mem)}},
+  {k:'M+',l:'M+',a:'Прибавить результат к памяти',c:'sci mem',run:()=>memAdd(1)},
+  {k:'M−',l:'M−',a:'Вычесть результат из памяти',c:'sci mem',run:()=>memAdd(-1)},
+  {k:'Ans',l:'Ans',a:'Ответ — результат прошлого вычисления',c:'sci',ins:'Ans'},
+  {k:'inv',l:'Inv',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render()}},
   // trigonometry
-  trig('sin','Синус','Арксинус'),trig('cos','Косинус','Арккосинус'),trig('tan','Тангенс','Арктангенс'),
-  trig('sec','Секанс','Арксеканс'),trig('csc','Косеканс','Арккосеканс'),trig('cot','Котангенс','Арккотангенс'),
-  // hyperbolic + constants
+  trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
   trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
-  {k:'π',l:'π',a:'Число пи',c:'sci',ins:'π'},
-  {k:'e',l:'e',a:'Число e',c:'sci',ins:'e'},
-  {k:'EE',l:'EE',a:'Умножить на 10 в степени (экспонента)',c:'sci',run:insertEE},
-  // powers
-  {k:'x²',l:'x'+sup('2'),a:'Квадрат',c:'sci',ins:'²'},
-  {k:'x³',l:'x'+sup('3'),a:'Куб',c:'sci',ins:'³'},
-  {k:'xʸ',l:'x'+sup('y'),a:'Возвести в степень',c:'sci',ins:'^'},
+  // constants and logs
+  {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
+  {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
+  {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
+  {k:'log',l:'log',a:'Десятичный логарифм (по основанию 10)',c:'sci',ins:'log('},
+  {k:'logxy',l:'log<sub>x</sub>y',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
+  {k:'mod',l:'mod',a:'Остаток от деления: 7 mod 3 = 1',c:'sci',ins:'mod'},
+  // powers and roots
+  {k:'x²',l:'x'+sup('2'),a:'Квадрат числа',c:'sci',ins:'²'},
+  {k:'xʸ',l:'x'+sup('y'),a:'Любая степень: 2^10 = 1024',c:'sci',ins:'^'},
+  {k:'√',l:'√',a:'Квадратный корень',c:'sci',ins:'√'},
+  {k:'ⁿ√',l:sup('y')+'√x',a:'Корень любой степени: 3ⁿ√8 = 2 (сначала степень корня, потом число)',c:'sci',ins:'ⁿ√'},
   {k:'eˣ',l:'e'+sup('x'),a:'e в степени x',c:'sci',ins:'e^('},
   {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',ins:'10^('},
-  {k:'2ˣ',l:'2'+sup('x'),a:'2 в степени x',c:'sci',ins:'2^('},
-  // roots and logs
-  {k:'√',l:'√',a:'Квадратный корень',c:'sci',ins:'√'},
-  {k:'∛',l:'∛',a:'Кубический корень',c:'sci',ins:'∛'},
-  {k:'ⁿ√',l:sup('y')+'√x',a:'Корень степени y из x: y ⁿ√ x',c:'sci',ins:'ⁿ√'},
-  {k:'ln',l:'ln',a:'Натуральный логарифм',c:'sci',ins:'ln('},
-  {k:'log',l:'log',a:'Десятичный логарифм',c:'sci',ins:'log('},
-  {k:'log₂',l:'log<sub>2</sub>',a:'Двоичный логарифм',c:'sci',ins:'log₂('},
-  // combinatorics
-  {k:'logxy',l:'log<sub>x</sub>y',a:'Логарифм y по основанию x: logₓ(x, y)',c:'sci',ins:'logₓ('},
-  {k:'n!',l:'n!',a:'Факториал',c:'sci',ins:'!'},
-  {k:'nPr',l:'nPr',a:'Размещения из n по r: n P r',c:'sci',ins:'P'},
-  {k:'nCr',l:'nCr',a:'Сочетания из n по r: n C r',c:'sci',ins:'C'},
-  {k:'|x|',l:'|x|',a:'Модуль',c:'sci',ins:'abs('},
-  {k:'1/x',l:'1/x',a:'Обратное число',c:'sci',ins:'⁻¹'},
-  // integers
-  {k:'mod',l:'mod',a:'Остаток от деления',c:'sci',ins:'mod'},
-  {k:'floor',l:'⌊x⌋',a:'Округление вниз',c:'sci',ins:'floor('},
-  {k:'ceil',l:'⌈x⌉',a:'Округление вверх',c:'sci',ins:'ceil('},
-  {k:'frac',l:sup('a')+'⁄'+'<sub>b</sub>',a:'Дробь: числитель ⁄ знаменатель',c:'sci',ins:'⁄'},
-  {k:'НОД',l:'НОД',a:'Наибольший общий делитель: НОД(a, b)',c:'sci',ins:'НОД('},
-  {k:'НОК',l:'НОК',a:'Наименьшее общее кратное: НОК(a, b)',c:'sci',ins:'НОК('},
-  // brackets, separators, misc
-  {k:'(',l:'(',a:'Открыть скобку',c:'sci',ins:'('},
-  {k:')',l:')',a:'Закрыть скобку',c:'sci',ins:')'},
-  {k:',',l:',',a:'Запятая между аргументами',c:'sci',ins:','},
-  {k:'°',l:'°',a:'Градусы: число перед этим знаком считается в градусах',c:'sci',ins:'°'},
-  {k:'SD',l:'S⇔D',a:'Показать результат дробью или десятичным числом',c:'sci',run:toggleFrac},
-  {k:'Rand',l:'Rand',a:'Случайное число от 0 до 1',c:'sci',run:()=>insertValue(Math.round(Math.random()*1e10)/1e10)},
+  // misc
+  {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
+  {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'abs('},
+  {k:'1/x',l:'1/x',a:'Обратное число: 1/x',c:'sci',ins:'⁻¹'},
+  {k:'frac',l:sup('a')+'⁄'+'<sub>b</sub>',a:'Дробь: 3⁄4 — три четвёртых',c:'sci',ins:'⁄'},
+  {k:'SD',l:'S⇔D',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
+  {k:',',l:',',a:'Запятая — разделяет основание и число в logₓ',c:'sci',ins:','},
 ];
 const val=f=>typeof f==='function'?f():f;
 const keyEls={};
@@ -805,7 +786,13 @@ function build(defs,host){
   for(const d of defs){
     const b=document.createElement('button');
     b.type='button';b.className='key '+d.c;b.dataset.k=d.k;
-    b.addEventListener('click',()=>press(d));
+    b.addEventListener('click',()=>{if(b._hinted){b._hinted=false;return}press(d)});
+    if(d.c.includes('sci')){ // long press explains what the key does
+      let t=null;
+      b.addEventListener('pointerdown',()=>{b._hinted=false;clearTimeout(t);t=setTimeout(()=>{b._hinted=true;snack(val(d.a));buzz(20)},500)});
+      ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>clearTimeout(t)));
+      b.addEventListener('contextmenu',e=>e.preventDefault());
+    }
     host.appendChild(b);keyEls[d.k]={el:b,d};
   }
 }
@@ -814,7 +801,7 @@ function refreshKeys(){
   for(const k in keyEls){const {el,d}=keyEls[k];
     const l=val(d.l),a=val(d.a);
     if(el._l!==l){el.innerHTML='<span>'+l+'</span>';el._l=l}
-    el.setAttribute('aria-label',a);
+    el.setAttribute('aria-label',a);el.title=a;
     if(d.toggle)el.setAttribute('aria-pressed',String(!!d.toggle()));
   }
 }
@@ -905,7 +892,7 @@ resEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventD
 
 /* snackbar */
 const sn=$('snack');let snT;
-function snack(msg){sn.textContent=msg;sn.classList.add('show');clearTimeout(snT);snT=setTimeout(()=>sn.classList.remove('show'),2200)}
+function snack(msg){sn.textContent=msg;sn.classList.add('show');clearTimeout(snT);snT=setTimeout(()=>sn.classList.remove('show'),msg.length>40?3500:2200)}
 
 /* ---------- drawers ---------- */
 const scrim=$('scrim'),hist=$('history'),histBtn=$('histBtn'),histList=$('histList'),setSheet=$('settings'),setBtn=$('setBtn');
@@ -1004,7 +991,7 @@ window.calcBack=function(){
 /* keyboard */
 function flash(k){const o=keyEls[k];if(!o)return;o.el.classList.add('pressed');setTimeout(()=>o.el.classList.remove('pressed'),130)}
 function viaKey(k){const o=keyEls[k];if(o){press(o.d);flash(k)}}
-const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.',',':',','p':'π','e':'e','E':'EE','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','f':'frac','\\':'frac','F':'SD','=':'=','Enter':'=','Escape':'AC'};
+const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.',',':',','p':'π','e':'e','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','f':'frac','\\':'frac','F':'SD','=':'=','Enter':'=','Escape':'AC'};
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(S.histOpen||S.setOpen){if(e.key==='Escape'){e.preventDefault();window.calcBack()}return}
