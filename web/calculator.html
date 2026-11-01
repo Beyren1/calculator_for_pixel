@@ -87,7 +87,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 
 /* Keypads: all functions on one screen */
 .pads{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain}
-.sci{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
+.sci{display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
 .base{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,minmax(50px,1fr));gap:var(--gap);flex:1.25 1 auto}
 .key{position:relative;overflow:hidden;border:0;border-radius:999px;font:inherit;display:flex;align-items:center;justify-content:center;
   min-width:0;min-height:38px;padding:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;white-space:nowrap;
@@ -110,7 +110,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
   .app{padding-block:12px 20px}
   .display{min-height:150px}
   .pads{flex:0 0 auto;height:min(64vh,540px);flex-direction:row;gap:24px;overflow:visible}
-  .sci{flex:6 1 0;grid-template-rows:repeat(5,1fr);grid-auto-rows:auto}
+  .sci{flex:5 1 0;grid-template-rows:repeat(5,1fr);grid-auto-rows:auto}
   .base{flex:4 1 0;grid-template-rows:repeat(5,1fr)}
   .key.sci{font-size:16px}
 }
@@ -123,7 +123,21 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .sheet.left{left:0;width:min(380px,88vw);border-radius:0 28px 28px 0;transform:translateX(-104%);padding-left:env(safe-area-inset-left,0px)}
 .sheet.right{right:0;width:min(420px,92vw);border-radius:28px 0 0 28px;transform:translateX(104%);padding-right:env(safe-area-inset-right,0px)}
+.sheet.top{left:0;right:0;bottom:auto;max-height:80%;max-width:640px;margin:0 auto;border-radius:0 0 28px 28px;transform:translateY(-104%);
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .sheet.open{transform:none}
+.more-body{flex:1;overflow-y:auto;padding:0 16px 24px;display:flex;flex-direction:column;gap:12px}
+.mem-value{font-size:22px;font-variant-numeric:tabular-nums;text-align:right;padding:4px 4px 0;word-break:break-all}
+.mem-value.empty{color:var(--muted);font-size:15px}
+.mem-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mem-row .key{min-height:48px}
+.more-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.more-item{border:0;background:var(--sheet);color:var(--on);font:inherit;text-align:left;border-radius:16px;padding:10px 12px;min-height:64px;cursor:pointer;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
+.more-item:hover{background:color-mix(in srgb,var(--on) 6%,var(--sheet))}
+.more-item:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.more-key{font-size:18px;font-weight:500;color:var(--on-op)}
+.more-key sup,.more-key sub{font-size:.66em;line-height:0}
+.more-desc{font-size:12.5px;color:var(--muted);line-height:1.35}
 .sheet-head{display:flex;align-items:center;gap:8px;padding:12px 12px 8px 24px;flex:none}
 .sheet-head h2{flex:1;margin:0;font-size:22px;font-weight:400}
 .text-btn{border:0;background:transparent;color:var(--eq);font:inherit;font-size:14px;font-weight:500;letter-spacing:.02em;min-height:48px;padding:0 14px;border-radius:999px;cursor:pointer}
@@ -188,7 +202,10 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
   </section>
 
   <div class="toolbar">
-    <button id="histBtn" class="icon-btn" type="button" aria-label="История вычислений" title="История (H)" aria-expanded="false" aria-controls="history">
+    <button id="moreBtn" class="icon-btn" type="button" aria-label="Память и другие функции" title="Память и другие функции" aria-expanded="false" aria-controls="more">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 4H6v2l6.5 6L6 18v2h12v-3h-7l5-5-5-5h7z"/></svg>
+    </button>
+    <button id="histBtn" class="icon-btn" type="button" aria-label="История вычислений" title="История (H), или смахните дисплей вниз" aria-expanded="false" aria-controls="history">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
     </button>
     <button id="setBtn" class="icon-btn" type="button" aria-label="Настройки: углы, формат, тема" title="Настройки" aria-expanded="false" aria-controls="settings">
@@ -214,7 +231,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 
 <div class="scrim" id="scrim"></div>
 
-<aside class="sheet left" id="history" aria-label="История вычислений" inert>
+<aside class="sheet top" id="history" aria-label="История вычислений" inert>
   <div class="sheet-head">
     <h2>История</h2>
     <button class="text-btn" id="histClear" type="button">Очистить</button>
@@ -223,6 +240,28 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
     </button>
   </div>
   <ul class="hist-list" id="histList"></ul>
+</aside>
+
+<aside class="sheet left" id="more" aria-labelledby="moreTitle" inert>
+  <div class="sheet-head">
+    <h2 id="moreTitle">Ещё</h2>
+    <button class="icon-btn" id="moreClose" type="button" aria-label="Закрыть панель">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+  <div class="more-body">
+    <div class="group">
+      <h3>Память</h3>
+      <p>Отложите число, чтобы вставить его позже. M+ прибавляет текущий результат к памяти, M− вычитает, MR вставляет, MC стирает. Ans — ответ прошлого вычисления.</p>
+      <div class="mem-value empty" id="memValue">Пусто</div>
+      <div class="mem-row" id="memRow"></div>
+    </div>
+    <div class="group">
+      <h3>Другие функции</h3>
+      <p>Нажмите, чтобы вставить в выражение.</p>
+      <div class="more-list" id="moreList"></div>
+    </div>
+  </div>
 </aside>
 
 <aside class="sheet right" id="settings" aria-labelledby="setTitle" inert>
@@ -565,7 +604,7 @@ function fracStr(v){const f=toFrac(v);return f?(f.n<0?'−':'')+Math.abs(f.n)+'�
 (function(){
 const $=id=>document.getElementById(id);
 const exprEl=$('expr'),resEl=$('result'),dispEl=$('display'),sciEl=$('sci'),baseEl=$('base'),appEl=$('app');
-const S={expr:'',cur:0,done:false,res:'',err:false,inv:false,ans:0,mem:null,hist:[],theme:'auto',histOpen:false,setOpen:false,
+const S={expr:'',cur:0,done:false,res:'',err:false,inv:false,ans:0,mem:null,hist:[],theme:'auto',histOpen:false,setOpen:false,moreOpen:false,
   set:{angle:'deg',notation:'auto',digits:4,group:true,haptics:true,frac:false},fracView:null};
 const KEY='eng-calc-v1';
 try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');
@@ -709,7 +748,7 @@ function moveCursor(dir){
 function memAdd(sign){
   const v=currentValue();
   if(v===null){snack('Нет числа для памяти');return}
-  S.mem=round15((S.mem||0)+sign*v);save();render();snack('В памяти: '+out(S.mem));
+  S.mem=round15((S.mem||0)+sign*v);save();render();if(S.moreOpen)renderMore();snack('В памяти: '+out(S.mem));
 }
 let previewRaw='';
 function preview(){
@@ -746,39 +785,58 @@ const trig=(n,ru,ruInv)=>({k:n,c:'sci',
   a:()=>S.inv?ruInv:ru,
   ins:()=>S.inv?n+'⁻¹(':n+'('});
 const SCI=[
-  // memory
-  {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();snack('Память очищена')}},
-  {k:'MR',l:'MR',a:'Вставить число из памяти',c:'sci mem',run:()=>{if(S.mem===null)snack('Память пуста');else insertValue(S.mem)}},
-  {k:'M+',l:'M+',a:'Прибавить результат к памяти',c:'sci mem',run:()=>memAdd(1)},
-  {k:'M−',l:'M−',a:'Вычесть результат из памяти',c:'sci mem',run:()=>memAdd(-1)},
-  {k:'Ans',l:'Ans',a:'Ответ — результат прошлого вычисления',c:'sci',ins:'Ans'},
-  {k:'inv',l:'Inv',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render()}},
-  // trigonometry
+  {k:'inv',l:'Inv',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
   trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
+  {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
+  {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
   trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
-  // constants and logs
-  {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
-  {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
+  {k:'mod',l:'mod',a:'Остаток от деления: 7 mod 3 = 1',c:'sci',ins:'mod'},
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
   {k:'log',l:'log',a:'Десятичный логарифм (по основанию 10)',c:'sci',ins:'log('},
   {k:'logxy',l:'log<sub>x</sub>y',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
-  {k:'mod',l:'mod',a:'Остаток от деления: 7 mod 3 = 1',c:'sci',ins:'mod'},
-  // powers and roots
   {k:'x²',l:'x'+sup('2'),a:'Квадрат числа',c:'sci',ins:'²'},
   {k:'xʸ',l:'x'+sup('y'),a:'Любая степень: 2^10 = 1024',c:'sci',ins:'^'},
   {k:'√',l:'√',a:'Квадратный корень',c:'sci',ins:'√'},
   {k:'ⁿ√',l:sup('y')+'√x',a:'Корень любой степени: 3ⁿ√8 = 2 (сначала степень корня, потом число)',c:'sci',ins:'ⁿ√'},
   {k:'eˣ',l:'e'+sup('x'),a:'e в степени x',c:'sci',ins:'e^('},
   {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',ins:'10^('},
-  // misc
   {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
   {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'abs('},
   {k:'1/x',l:'1/x',a:'Обратное число: 1/x',c:'sci',ins:'⁻¹'},
   {k:'frac',l:sup('a')+'⁄'+'<sub>b</sub>',a:'Дробь: 3⁄4 — три четвёртых',c:'sci',ins:'⁄'},
   {k:'SD',l:'S⇔D',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
   {k:',',l:',',a:'Запятая — разделяет основание и число в logₓ',c:'sci',ins:','},
+];
+const MEM=[
+  {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();if(S.moreOpen)renderMore();snack('Память очищена')}},
+  {k:'MR',l:'MR',a:'Вставить число из памяти',c:'sci mem',run:()=>{if(S.mem===null)snack('Память пуста');else{if(S.moreOpen)setMore(false);insertValue(S.mem)}}},
+  {k:'M+',l:'M+',a:'Прибавить результат к памяти',c:'sci mem',run:()=>memAdd(1)},
+  {k:'M−',l:'M−',a:'Вычесть результат из памяти',c:'sci mem',run:()=>memAdd(-1)},
+  {k:'Ans',l:'Ans',a:'Ответ — результат прошлого вычисления',c:'sci',run:()=>{if(S.moreOpen)setMore(false);insert('Ans')}},
+];
+const MORE=[
+  {k:'x³',l:'x'+sup('3'),a:'Куб числа: 2³ = 8',ins:'³'},
+  {k:'∛',l:'∛',a:'Кубический корень: ∛27 = 3',ins:'∛'},
+  {k:'2ˣ',l:'2'+sup('x'),a:'Два в степени: 2^10 = 1024',ins:'2^('},
+  {k:'log₂',l:'log<sub>2</sub>',a:'Логарифм по основанию 2: log₂(8) = 3',ins:'log₂('},
+  {k:'sec',l:()=>S.inv?'sec'+sup('−1'):'sec',a:'Секанс = 1 ÷ cos',ins:()=>S.inv?'sec⁻¹(':'sec('},
+  {k:'csc',l:()=>S.inv?'csc'+sup('−1'):'csc',a:'Косеканс = 1 ÷ sin',ins:()=>S.inv?'csc⁻¹(':'csc('},
+  {k:'cot',l:()=>S.inv?'cot'+sup('−1'):'cot',a:'Котангенс = cos ÷ sin',ins:()=>S.inv?'cot⁻¹(':'cot('},
+  {k:'°',l:'°',a:'Градусы, даже в режиме радиан: sin(30°) = 0.5',ins:'°'},
+  {k:'НОД',l:'НОД',a:'Наибольший общий делитель: НОД(12,18) = 6',ins:'НОД('},
+  {k:'НОК',l:'НОК',a:'Наименьшее общее кратное: НОК(4,6) = 12',ins:'НОК('},
+  {k:'nCr',l:'nCr',a:'Сколько способов выбрать r из n: 5C2 = 10',ins:'C'},
+  {k:'nPr',l:'nPr',a:'То же, но порядок важен: 5P2 = 20',ins:'P'},
+  {k:'floor',l:'⌊x⌋',a:'Округлить вниз: ⌊2.7⌋ = 2',ins:'floor('},
+  {k:'ceil',l:'⌈x⌉',a:'Округлить вверх: ⌈2.1⌉ = 3',ins:'ceil('},
+  {k:'round',l:'round',a:'Округлить до целого: round(2.5) = 3',ins:'round('},
+  {k:'sgn',l:'sgn',a:'Знак числа: 1, −1 или 0',ins:'sgn('},
+  {k:'EE',l:'EE',a:'Умножить на 10 в степени: 3E5 = 300 000',run:insertEE},
+  {k:'Rand',l:'Rand',a:'Случайное число от 0 до 1',run:()=>insertValue(Math.round(Math.random()*1e10)/1e10)},
+  {k:'(',l:'(',a:'Открыть скобку',ins:'('},
+  {k:')',l:')',a:'Закрыть скобку',ins:')'},
 ];
 const val=f=>typeof f==='function'?f():f;
 const keyEls={};
@@ -805,7 +863,18 @@ function refreshKeys(){
     if(d.toggle)el.setAttribute('aria-pressed',String(!!d.toggle()));
   }
 }
-build(SCI,sciEl);build(BASE,baseEl);
+build(SCI,sciEl);build(BASE,baseEl);build(MEM,$('memRow'));
+function renderMore(){
+  const list=$('moreList');list.innerHTML='';
+  for(const d of MORE){
+    const b=document.createElement('button');b.type='button';b.className='more-item';
+    b.innerHTML='<span class="more-key">'+val(d.l)+'</span><span class="more-desc"></span>';
+    b.lastChild.textContent=d.a;b.setAttribute('aria-label',d.a);
+    b.addEventListener('click',()=>{setMore(false);press(d)});
+    list.appendChild(b);
+  }
+  const mv=$('memValue');mv.classList.toggle('empty',S.mem===null);mv.textContent=S.mem===null?'Пусто':'M = '+out(S.mem);
+}
 
 /* ripple + keep caret focus + haptics */
 document.addEventListener('pointerdown',e=>{
@@ -895,8 +964,15 @@ const sn=$('snack');let snT;
 function snack(msg){sn.textContent=msg;sn.classList.add('show');clearTimeout(snT);snT=setTimeout(()=>sn.classList.remove('show'),msg.length>40?3500:2200)}
 
 /* ---------- drawers ---------- */
+const moreSheet=$('more'),moreBtn=$('moreBtn');
 const scrim=$('scrim'),hist=$('history'),histBtn=$('histBtn'),histList=$('histList'),setSheet=$('settings'),setBtn=$('setBtn');
-function syncScrim(){const any=S.histOpen||S.setOpen;scrim.classList.toggle('show',any);appEl.inert=any}
+function setMore(open){
+  S.moreOpen=open;moreSheet.classList.toggle('open',open);moreSheet.inert=!open;moreBtn.setAttribute('aria-expanded',String(open));syncScrim();
+  if(open){renderMore();setTimeout(()=>$('moreClose').focus(),50)}else moreBtn.focus({preventScroll:true});
+}
+moreBtn.addEventListener('click',()=>setMore(true));
+$('moreClose').addEventListener('click',()=>setMore(false));
+function syncScrim(){const any=S.histOpen||S.setOpen||S.moreOpen;scrim.classList.toggle('show',any);appEl.inert=any}
 function setHist(open){
   S.histOpen=open;hist.classList.toggle('open',open);hist.inert=!open;histBtn.setAttribute('aria-expanded',String(open));syncScrim();
   if(open){renderHistory();setTimeout(()=>$('histClose').focus(),50)}else histBtn.focus({preventScroll:true});
@@ -905,7 +981,7 @@ function setSettings(open){
   S.setOpen=open;setSheet.classList.toggle('open',open);setSheet.inert=!open;setBtn.setAttribute('aria-expanded',String(open));syncScrim();
   if(open){renderSettings();setTimeout(()=>$('setClose').focus(),50)}else{render();setBtn.focus({preventScroll:true})}
 }
-scrim.addEventListener('click',()=>{if(S.histOpen)setHist(false);if(S.setOpen)setSettings(false)});
+scrim.addEventListener('click',()=>{if(S.histOpen)setHist(false);if(S.setOpen)setSettings(false);if(S.moreOpen)setMore(false)});
 
 /* history */
 function renderHistory(){
@@ -969,10 +1045,17 @@ let tx=null,ty=0,tStart=null;
 document.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY;tStart=e.target},{passive:true});
 document.addEventListener('touchend',e=>{
   if(tx===null)return;const t=e.changedTouches[0];const dx=t.clientX-tx,dy=t.clientY-ty;tx=null;
+  const inApp=tStart&&tStart.closest&&tStart.closest('#app');
+  if(Math.abs(dy)>70&&Math.abs(dx)<Math.abs(dy)*0.5){ // vertical: history pulls down from the top
+    if(S.histOpen&&dy<0)setHist(false);
+    else if(!S.histOpen&&!S.setOpen&&!S.moreOpen&&dy>0&&inApp&&tStart.closest('#display'))setHist(true);
+    return;
+  }
   if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.5)return;
   if(S.setOpen){if(dx>0)setSettings(false);return}
-  if(S.histOpen){if(dx<0)setHist(false);return}
-  if(tStart&&tStart.closest&&tStart.closest('#app')){if(dx<0)setSettings(true);else setHist(true)}
+  if(S.moreOpen){if(dx<0)setMore(false);return}
+  if(S.histOpen)return;
+  if(inApp){if(dx<0)setSettings(true);else setMore(true)}
 },{passive:true});
 
 /* theme */
@@ -985,6 +1068,7 @@ function applyTheme(){
 window.calcBack=function(){
   if(S.histOpen){setHist(false);return true}
   if(S.setOpen){setSettings(false);return true}
+  if(S.moreOpen){setMore(false);return true}
   return false;
 };
 
@@ -994,7 +1078,7 @@ function viaKey(k){const o=keyEls[k];if(o){press(o.d);flash(k)}}
 const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.',',':',','p':'π','e':'e','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','f':'frac','\\':'frac','F':'SD','=':'=','Enter':'=','Escape':'AC'};
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
-  if(S.histOpen||S.setOpen){if(e.key==='Escape'){e.preventDefault();window.calcBack()}return}
+  if(S.histOpen||S.setOpen||S.moreOpen){if(e.key==='Escape'){e.preventDefault();window.calcBack()}return}
   const tgt=e.target;
   if(tgt!==exprEl&&tgt.closest&&tgt.closest('button')&&(e.key==='Enter'||e.key===' '))return;
   let k=e.key;
