@@ -369,6 +369,11 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
 
 <section class="screen" id="solveScreen" hidden aria-labelledby="sTitle">
   <h2 id="sTitle">Уравнения</h2>
+  <div class="row-actions" id="photoRow" hidden>
+    <button class="btn tonal" id="photoCam" type="button">📷 Сфотографировать задачу</button>
+    <button class="btn tonal" id="photoPick" type="button">Из галереи</button>
+  </div>
+  <div class="out-card" id="photoNote" hidden></div>
   <div class="seg" id="segSolve" role="group" aria-label="Тип задачи">
     <button type="button" data-v="eq" aria-pressed="true">Уравнение</button>
     <button type="button" data-v="quad">ax²+bx+c</button>
@@ -1933,6 +1938,39 @@ function solve(){
   }catch(e){showOut([errBox(e.message||'Не получилось решить')])}
 }
 $('solveBtn').addEventListener('click',solve);
+
+/* ================= photo of a problem (Android app only: on-device text recognition) ================= */
+if(window.AndroidBridge&&window.AndroidBridge.scanPhoto){
+  $('photoRow').hidden=false;
+  $('photoCam').addEventListener('click',()=>{try{AndroidBridge.scanPhoto('camera')}catch(e){snack('Камера недоступна')}});
+  $('photoPick').addEventListener('click',()=>{try{AndroidBridge.scanPhoto('gallery')}catch(e){snack('Галерея недоступна')}});
+}
+// OCR text → our expression syntax
+function cleanOcr(line){
+  let t=line.replace(/[—–‐-]/g,'−').replace(/[·•∙*]/g,'×').replace(/[:]/g,'÷').replace(/X/g,'x').replace(/\s+/g,'')
+    .replace(/(\d),(\d)/g,'$1.$2').replace(/[“”"'`]/g,'').replace(/[‚,]$/,'');
+  t=t.replace(/x([23])(?![\d.])/g,'x⟦$1⟧'); // x2 read from x² → power
+  t=t.replace(/[^0-9x.,+−×÷()=²³√π^\/a-zа-я⦃⦄⦙⟦⟧]/gi,'');
+  return t;
+}
+window.onPhotoText=function(text,err){
+  if(err){if(err!=='cancel')snack(err);return}
+  const lines=String(text||'').split(/\n+/).map(cleanOcr).filter(l=>/\d|x/.test(l)&&/[=+−×÷^⟦²³√\/]/.test(l));
+  if(!lines.length){snack('Не нашёл на фото пример. Снимите ближе и ровнее');return}
+  const eqLine=lines.find(l=>l.includes('=')&&l.includes('x'))||lines.find(l=>l.includes('x'));
+  const note=$('photoNote');
+  if(eqLine){
+    setTab(2);
+    segSolve.querySelector('[data-v="eq"]').click();
+    let t=eqLine.replace(/=+$/,'');if(!t.includes('='))t+='=0';
+    eqField.expr=t;eqField.cur=t.length;drawField(eqField.el,t,t.length,false);
+    note.hidden=false;note.innerHTML='<div class="muted">Распознал уравнение. Если что-то не так, исправьте его и нажмите «Решить».</div>';
+    solve();return;
+  }
+  const t=lines[0].replace(/=+$/,'');
+  setTab(0);S.expr=t;S.cur=t.length;S.done=false;S.err=false;equals();
+  snack('Распознал: '+plainExpr(t));
+};
 
 /* ================= unit converter ================= */
 const UNITS={
