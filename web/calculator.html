@@ -95,7 +95,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .icon-btn::after,.key::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s;pointer-events:none;border-radius:inherit}
 .icon-btn:hover::after,.key:hover::after{opacity:.08}
 .icon-btn:focus-visible,.key:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-#bsBtn{color:var(--on)}
+.key.util svg{width:1em;height:1em;fill:currentColor;display:block}
 
 /* Keypads: all functions on one screen */
 .pads{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain}
@@ -230,9 +230,6 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
     </button>
     <button id="curRight" class="icon-btn cur-btn" type="button" aria-label="Курсор вправо" title="Курсор вправо (→)">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-    </button>
-    <button id="bsBtn" class="icon-btn" type="button" aria-label="Стереть символ. Долгое нажатие — очистить всё" title="Стереть (долгое нажатие — очистить)">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"/></svg>
     </button>
   </div>
 
@@ -813,9 +810,9 @@ function preview(){
 const sup=s=>`<sup>${s}</sup>`;
 const BASE=[
   {k:'AC',l:'Сброс',a:'Очистить всё',c:'util',run:clearAll},
-  {k:'(',l:'(',a:'Открыть скобку',c:'op',ins:'('},
-  {k:')',l:')',a:'Закрыть скобку',c:'op',ins:')'},
+  {k:'%',l:'%',a:'Процент: 200 + 10% = 220',c:'op',ins:'%'},
   {k:'÷',l:'÷',a:'Разделить',c:'op',ins:'÷'},
+  {k:'⌫',l:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"/></svg>',a:'Стереть символ. Удерживайте — очистить всё',c:'util',run:backspace,long:()=>{clearAll();buzz(30)}},
   ...['7','8','9'].map(d=>({k:d,l:d,a:d,c:'digit',ins:d})),
   {k:'×',l:'×',a:'Умножить',c:'op',ins:'×'},
   ...['4','5','6'].map(d=>({k:d,l:d,a:d,c:'digit',ins:d})),
@@ -850,9 +847,10 @@ const SCI=[
   {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',ins:'10^('},
   {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
   {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'модуль('},
-  {k:'%',l:'%',a:'Процент: 200 + 10% = 220',c:'sci',ins:'%'},
+  {k:'(',l:'(',a:'Открыть скобку',c:'sci',ins:'('},
+  {k:')',l:')',a:'Закрыть скобку',c:'sci',ins:')'},
   {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: нажмите и введите числитель, нажмите ещё раз — знаменатель, ещё раз — выйти из дроби',c:'sci',run:fracKey},
-  {k:'SD',span:2,l:'дробь ⇄ число',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
+  {k:'SD',l:'<span style="font-size:11.5px;line-height:1.15;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
 ];
 const MEM=[
   {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();if(S.moreOpen)renderMore();snack('Память очищена')}},
@@ -933,11 +931,7 @@ document.addEventListener('pointerdown',e=>{
 document.addEventListener('mousedown',e=>{if(document.activeElement===exprEl&&e.target.closest('.key,#bsBtn,.cur-btn'))e.preventDefault()});
 
 /* backspace with long press */
-const bs=$('bsBtn');let lpTimer=null,lpFired=false;
-bs.addEventListener('pointerdown',()=>{lpFired=false;clearTimeout(lpTimer);lpTimer=setTimeout(()=>{lpFired=true;clearAll();buzz(30)},550)});
-['pointerup','pointerleave','pointercancel'].forEach(t=>bs.addEventListener(t,()=>clearTimeout(lpTimer)));
-bs.addEventListener('click',()=>{if(lpFired){lpFired=false;return}backspace()});
-bs.addEventListener('contextmenu',e=>e.preventDefault());
+
 
 /* ---------- display ---------- */
 const FONT='"Google Sans","Product Sans",Roboto,system-ui,sans-serif';
@@ -1142,7 +1136,7 @@ window.calcBack=function(){
 /* keyboard */
 function flash(k){const o=keyEls[k];if(!o)return;o.el.classList.add('pressed');setTimeout(()=>o.el.classList.remove('pressed'),130)}
 function viaKey(k){const o=keyEls[k];if(o){press(o.d);flash(k)}else{const d=MORE.find(x=>x.k===k);if(d)press(d)}}
-const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.',',':',','p':'π','e':'e','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','f':'frac','\\':'frac','F':'SD','=':'=','Enter':'=','Escape':'AC'};
+const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.','p':'π','e':'e','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','f':'frac','\\':'frac','F':'SD','=':'=','Enter':'=','Escape':'AC'};
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(S.histOpen||S.setOpen||S.moreOpen){if(e.key==='Escape'){e.preventDefault();window.calcBack()}return}
@@ -1156,7 +1150,8 @@ document.addEventListener('keydown',e=>{
     insert((S.inv||k!==k.toLowerCase())?n+'⁻¹(':n+'(');flash(n);
   }
   else if(k==='('||k===')'){insert(k);flash(k)}
-  else if(k==='Backspace'){backspace();bs.classList.add('pressed');setTimeout(()=>bs.classList.remove('pressed'),130)}
+  else if(k===','){insert(',')}
+  else if(k==='Backspace'){backspace();flash('⌫')}
   else if(k==='Delete'){delForward()}
   else if(k==='h'){setHist(true)}
   else if(k==='d'){const o=['deg','rad','grad'];S.set.angle=o[(o.indexOf(S.set.angle)+1)%3];save();render();snack('Углы: '+ANGLE_BADGE[S.set.angle])}
