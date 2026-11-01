@@ -1180,7 +1180,7 @@ const SCI=[
   {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
   {k:'log',l:'lg',a:'Десятичный логарифм (по основанию 10): lg(100) = 2',c:'sci',ins:'lg('},
-  {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
+  {k:'e',l:'e<small class="alt">π</small>',a:'Число e ≈ 2.71828. Удерживайте — число π',c:'sci',ins:'e',long:()=>insert('π')},
   {k:'x²',l:'x'+sup('2'),a:'Квадрат числа',c:'sci',ins:'²'},
   {k:'xʸ',l:'x'+sup('y'),a:'Степень: число, потом xʸ и показатель; выйти из степени — кнопкой ›',c:'sci',run:()=>insertPow('')},
   {k:'√',l:'√',a:'Квадратный корень: число пишется под знаком корня',c:'sci',run:rootKey},
@@ -1192,9 +1192,8 @@ const SCI=[
   {k:'|x|',l:'|x|',a:'Модуль — число без знака: |−3| = 3',c:'sci',ins:'модуль('},
   {k:'(',l:'(',a:'Открыть скобку',c:'sci',ins:'('},
   {k:')',l:')',a:'Закрыть скобку',c:'sci',ins:')'},
-  {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: введите числитель, кнопкой › перейдите в знаменатель, ещё раз › — выйти. Дробь можно вставить внутрь другой дроби',c:'sci',run:fracKey},
-  {k:'SD',l:'<span style="font-size:11.5px;line-height:1.15;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
-  {k:'Σ',l:'Σ',a:'Сумма: снизу «от», сверху «до», справа выражение с k. Σ k от 1 до 100 = 5050',c:'sci',run:()=>bigKey('Σ')},
+  {k:'frac',span:3,l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: введите числитель, кнопкой › перейдите в знаменатель, ещё раз › — выйти. Дробь можно вставить внутрь другой дроби',c:'sci',run:fracKey},
+  {k:'SD',span:3,l:'<span style="font-size:11.5px;line-height:1.15;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
   {k:'i',l:'<i style="font-family:serif;font-size:1.15em">i</i>',a:'Мнимая единица: i² = −1. С ней можно считать комплексные числа: √(−4) + i = 3i',c:'sci',ins:'i'},
 ];
 const MEM=[
@@ -1208,6 +1207,7 @@ const MORE=[
   trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
   trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
   trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
+  {k:'Σ',l:'Σ',a:'Сумма: снизу «от», сверху «до», справа выражение с k. Σ k от 1 до 100 = 5050',run:()=>bigKey('Σ')},
   {k:'∏',l:'∏',a:'Произведение: снизу «от», сверху «до», справа выражение с k. ∏ k от 1 до 5 = 120',run:()=>bigKey('∏')},
   {k:'k',l:'k',a:'Переменная k для суммы и произведения',ins:'k'},
   {k:'Re',l:'Re',a:'Действительная часть: Re(3+4i) = 3',ins:'Re('},
