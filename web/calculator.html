@@ -304,6 +304,9 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
 .sys{display:grid;gap:8px;align-items:center}
 .sys .field{padding:0 8px;min-height:48px}
 .sys .inp{text-align:center;font-size:17px}
+.mat{display:inline-grid;gap:4px 16px;padding:6px 12px;border-left:2px solid currentColor;border-right:2px solid currentColor;border-radius:8px;font-variant-numeric:tabular-nums;font-size:17px;text-align:right;max-width:100%;overflow-x:auto}
+.mres{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--line)}
+.mres b{font-weight:500}
 .sys .mfield{font-size:20px;justify-content:center;min-height:44px}
 .sys .v{color:var(--muted);font-size:15px;text-align:center}
 
@@ -378,8 +381,8 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
   <div class="seg" id="segSolve" role="group" aria-label="Тип задачи">
     <button type="button" data-v="eq" aria-pressed="true">Уравнение</button>
     <button type="button" data-v="quad">ax²+bx+c</button>
-    <button type="button" data-v="sys2">Система 2</button>
-    <button type="button" data-v="sys3">Система 3</button>
+    <button type="button" data-v="sys">Система</button>
+    <button type="button" data-v="mat">Матрица</button>
   </div>
   <div id="solveEq" class="out-card">
     <div class="muted">Нажмите на поле и наберите уравнение с x на клавиатуре снизу, например <b>2x+3=7</b> или <b>sin(x)=0.5</b>. Углы — как в настройках калькулятора.</div>
@@ -394,8 +397,17 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
     </div>
   </div>
   <div id="solveSys" class="out-card" hidden>
+    <div class="row"><div class="label"><b>Неизвестных</b><span>столько же уравнений</span></div>
+      <div class="stepper"><button class="icon-btn" type="button" id="sysMinus" aria-label="Меньше неизвестных">−</button><output id="sysN">3</output><button class="icon-btn" type="button" id="sysPlus" aria-label="Больше неизвестных">+</button></div></div>
     <div class="muted" id="sysHint"></div>
     <div class="sys" id="sysGrid"></div>
+  </div>
+  <div id="solveMat" class="out-card" hidden>
+    <div class="row"><div class="label"><b>Строк</b></div>
+      <div class="stepper"><button class="icon-btn" type="button" id="matRm" aria-label="Меньше строк">−</button><output id="matR">3</output><button class="icon-btn" type="button" id="matRp" aria-label="Больше строк">+</button></div></div>
+    <div class="row"><div class="label"><b>Столбцов</b></div>
+      <div class="stepper"><button class="icon-btn" type="button" id="matCm" aria-label="Меньше столбцов">−</button><output id="matC">3</output><button class="icon-btn" type="button" id="matCp" aria-label="Больше столбцов">+</button></div></div>
+    <div class="sys" id="matGrid"></div>
   </div>
   <div class="row-actions"><button class="btn" id="solveBtn" type="button">Решить</button><span class="muted" style="color:var(--muted);font-size:13px">Нажмите на ответ, чтобы вставить его в калькулятор</span></div>
   <div class="out-card" id="solveOut" aria-live="polite" hidden></div>
@@ -560,7 +572,7 @@ function tokenize(s){
     if(s.startsWith('⁻¹',i)){out.push({t:'post',v:'inv'});i+=2;continue}
     switch(ch){
       case 'π':case 'e':out.push({t:'const',v:ch});break;
-      case 'k':case 'x':out.push({t:'var',n:ch});break;
+      case 'k':case 'x':case 'y':case 'z':case 'u':case 'v':case 'w':out.push({t:'var',n:ch});break;
       case 'i':out.push({t:'const',v:'i'});break;
       case '²':case '³':case '!':case '%':case '°':out.push({t:'post',v:ch});break;
       case '+':out.push({t:'op',v:'+'});break;
@@ -835,7 +847,8 @@ function evaluate(src,ctx){
     if(t.t==='num')return t.v;
     if(t.t==='const')return t.v==='π'?Math.PI:t.v==='e'?Math.E:t.v==='i'?new Cx(0,1):(ansC||ctx.ans||0);
     if(t.t==='var'){
-      if(t.n==='x'){if(typeof ctx.x!=='number')throw new CalcError('syntax','x используется в графиках и уравнениях');return ctx.x}
+      if(t.n==='x'&&typeof ctx.x==='number')return ctx.x;
+      if(t.n!=='k'){if(ctx.vars&&typeof ctx.vars[t.n]==='number')return ctx.vars[t.n];throw new CalcError('syntax',t.n+' используется в графиках и уравнениях')}
       if(kv===null)throw new CalcError('syntax','k можно писать только внутри Σ или ∏');return kv}
     if(t.t==='('){const v=expr();closeParen();return v}
     if(t.t==='fn'&&(t.v==='Σ'||t.v==='∏')){ // Σ(выражение с k, от, до)
@@ -1837,8 +1850,8 @@ let solveMode='eq';
 const segSolve=$('segSolve');
 segSolve.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
   solveMode=b.dataset.v;segSolve.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
-  $('solveEq').hidden=solveMode!=='eq';$('solveQuad').hidden=solveMode!=='quad';$('solveSys').hidden=!solveMode.startsWith('sys');
-  closePad();if(solveMode.startsWith('sys'))buildSys(solveMode==='sys2'?2:3);
+  $('solveEq').hidden=solveMode!=='eq';$('solveQuad').hidden=solveMode!=='quad';$('solveSys').hidden=solveMode!=='sys';$('solveMat').hidden=solveMode!=='mat';
+  closePad();if(solveMode==='sys'&&!sysFields.length)buildSys(sysN);if(solveMode==='mat'&&!matFields.length)buildMat();
   $('solveOut').hidden=true;
 }));
 const eqField=makeField($('eqIn'),'',()=>{},()=>solve());
@@ -1846,20 +1859,123 @@ function chainNext(list){list.forEach((f,i)=>{f.onEnter=()=>{if(i<list.length-1)
 const quadFields=['qa','qb','qc'].map((id,i)=>makeField($(id),['1','−5','6'][i],null,null));
 chainNext(quadFields);
 const SYS_DEF={2:[[2,1,5],[1,-1,1]],3:[[1,1,1,6],[2,-1,1,3],[1,2,-1,2]]};
-let sysFields=[];
-function buildSys(n){
+const VARS=['x','y','z','u','v','w'];
+let sysFields=[],sysN=3;
+function buildSys(n,rows){ // rows: optional coefficients [[a…, rhs], …]
+  sysN=n;$('sysN').textContent=n;$('sysMinus').disabled=n<=2;$('sysPlus').disabled=n>=6;
+  const old=sysFields.map(f=>f.expr),oldN=Math.round((-1+Math.sqrt(1+4*old.length))/2); // keep typed values when resizing
   sysFields=[];
-  const g=$('sysGrid'),V=['x','y','z'];g.innerHTML='';g.style.gridTemplateColumns=`repeat(${n},1fr) auto 1fr`;
-  $('sysHint').innerHTML=n===2?'Система <b>a·x + b·y = c</b>. Впишите коэффициенты каждой строки.':'Система <b>a·x + b·y + c·z = d</b>. Впишите коэффициенты каждой строки.';
+  const g=$('sysGrid');g.innerHTML='';g.style.gridTemplateColumns=`repeat(${n},minmax(0,1fr)) auto minmax(0,1fr)`;
+  $('sysHint').innerHTML='Впишите коэффициенты при '+VARS.slice(0,n).join(', ')+' и правую часть каждого уравнения.';
   for(let r=0;r<n;r++){
     for(let k=0;k<=n;k++){
       if(k===n){const eq=document.createElement('span');eq.className='v';eq.textContent='=';g.appendChild(eq)}
       const f=document.createElement('div');f.className='field';
-      f.innerHTML=`${k<n?`<label>${V[k]}</label>`:''}<div class="mfield boxes" role="textbox" tabindex="0" aria-label="${k<n?'Коэффициент при '+V[k]:'Правая часть'}, строка ${r+1}"></div>`;
-      g.appendChild(f);sysFields.push(makeField(f.querySelector('.mfield'),String(SYS_DEF[n][r][k]).replace('-','−'),null,null));
+      f.innerHTML=`${k<n?`<label>${VARS[k]}</label>`:''}<div class="mfield boxes" role="textbox" tabindex="0" aria-label="${k<n?'Коэффициент при '+VARS[k]:'Правая часть'}, строка ${r+1}"></div>`;
+      let v;
+      if(rows)v=rows[r]?rows[r][k]:0;
+      else if(old.length&&r<oldN&&(k<n?k<oldN:true))v=old[r*(oldN+1)+(k<n?k:oldN)];
+      else if(!old.length&&SYS_DEF[n])v=SYS_DEF[n][r][k];
+      else v=r===(k)?1:0;
+      const t=typeof v==='number'?fmt(round15(v)):String(v??'');
+      g.appendChild(f);sysFields.push(makeField(f.querySelector('.mfield'),t,null,null));
     }
   }
   chainNext(sysFields);
+}
+$('sysMinus').addEventListener('click',()=>{closePad();if(sysN>2)buildSys(sysN-1)});
+$('sysPlus').addEventListener('click',()=>{closePad();if(sysN<6)buildSys(sysN+1)});
+
+/* matrix */
+let matFields=[],matR=3,matC=3;
+const MAT_DEF=[[2,1,1],[1,3,2],[1,0,0]];
+function buildMat(){
+  const old=matFields.map(f=>f.expr),oR=buildMat.r||0,oC=buildMat.c||0;
+  $('matR').textContent=matR;$('matC').textContent=matC;
+  $('matRm').disabled=matR<=1;$('matRp').disabled=matR>=6;$('matCm').disabled=matC<=1;$('matCp').disabled=matC>=6;
+  matFields=[];const g=$('matGrid');g.innerHTML='';g.style.gridTemplateColumns=`repeat(${matC},minmax(0,1fr))`;
+  for(let r=0;r<matR;r++)for(let c=0;c<matC;c++){
+    const f=document.createElement('div');f.className='field';
+    f.innerHTML=`<div class="mfield boxes" role="textbox" tabindex="0" aria-label="Элемент ${r+1}, ${c+1}"></div>`;
+    let v=r<oR&&c<oC?old[r*oC+c]:(oR?'0':fmt(MAT_DEF[r]?.[c]??0));
+    g.appendChild(f);matFields.push(makeField(f.querySelector('.mfield'),v,null,null));
+  }
+  buildMat.r=matR;buildMat.c=matC;chainNext(matFields);
+}
+$('matRm').addEventListener('click',()=>{closePad();if(matR>1){matR--;buildMat()}});
+$('matRp').addEventListener('click',()=>{closePad();if(matR<6){matR++;buildMat()}});
+$('matCm').addEventListener('click',()=>{closePad();if(matC>1){matC--;buildMat()}});
+$('matCp').addEventListener('click',()=>{closePad();if(matC<6){matC++;buildMat()}});
+
+/* linear algebra helpers (plain numbers) */
+const EPS=M=>1e-10*Math.max(1,...M.flat().map(Math.abs));
+function rref(A){ // returns {M, pivots}
+  const M=A.map(r=>r.slice()),R=M.length,C=M[0].length,eps=EPS(A),piv=[];let r=0;
+  for(let c=0;c<C&&r<R;c++){
+    let p=r;for(let i=r+1;i<R;i++)if(Math.abs(M[i][c])>Math.abs(M[p][c]))p=i;
+    if(Math.abs(M[p][c])<=eps)continue;
+    [M[r],M[p]]=[M[p],M[r]];const d=M[r][c];for(let j=0;j<C;j++)M[r][j]/=d;
+    for(let i=0;i<R;i++){if(i===r)continue;const k=M[i][c];if(k)for(let j=0;j<C;j++)M[i][j]-=k*M[r][j]}
+    for(let j=0;j<C;j++)if(Math.abs(M[r][j])<=eps)M[r][j]=0;
+    piv.push(c);r++;
+  }
+  return {M,piv};
+}
+function det(A){
+  const M=A.map(r=>r.slice()),n=M.length;let d=1;
+  for(let c=0;c<n;c++){
+    let p=c;for(let i=c+1;i<n;i++)if(Math.abs(M[i][c])>Math.abs(M[p][c]))p=i;
+    if(M[p][c]===0)return 0;
+    if(p!==c){[M[c],M[p]]=[M[p],M[c]];d=-d}
+    d*=M[c][c];
+    for(let i=c+1;i<n;i++){const k=M[i][c]/M[c][c];for(let j=c;j<n;j++)M[i][j]-=k*M[c][j]}
+  }
+  return d;
+}
+function inverse(A){
+  const n=A.length,{M,piv}=rref(A.map((r,i)=>[...r,...A.map((_,j)=>i===j?1:0)]));
+  if(piv.length<n||piv[n-1]!==n-1)return null;
+  return M.map(r=>r.slice(n));
+}
+function charPoly(A){ // Faddeev–LeVerrier: λⁿ + c1λⁿ⁻¹ + … + cn
+  const n=A.length,I=A.map((r,i)=>r.map((_,j)=>i===j?1:0)),mul=(X,Y)=>X.map(r=>Y[0].map((_,j)=>r.reduce((s,v,k)=>s+v*Y[k][j],0)));
+  let Mk=I.map(r=>r.slice()),c=[1];
+  for(let k=1;k<=n;k++){
+    const AM=mul(A,Mk),ck=-AM.reduce((s,r,i)=>s+r[i],0)/k;c.push(ck);
+    Mk=AM.map((r,i)=>r.map((v,j)=>v+(i===j?ck:0)));
+  }
+  return c;
+}
+function polyRoots(c){ // Durand–Kerner, c[0]=1
+  const n=c.length-1;if(n<1)return [];
+  const ev=z=>c.reduce((acc,a)=>cadd(cmul(acc,z),a),0);
+  let R=Array.from({length:n},(_,i)=>cpow(new Cx(0.4,0.9),i));
+  for(let it=0;it<500;it++){
+    let moved=0;
+    R=R.map((z,i)=>{let den=1;R.forEach((w,j)=>{if(j!==i)den=cmul(den,csub(z,w))});
+      if(cabs(den)===0)den=1e-12;const dz=cdiv(ev(z),den);moved=Math.max(moved,cabs(dz));return csub(z,dz)});
+    if(moved<1e-14)break;
+  }
+  return R.map(z=>{z=toC(z);const re=Math.abs(z.re)<1e-9?0:z.re,im=Math.abs(z.im)<1e-7*(1+Math.abs(z.re))?0:z.im;return round15(im===0?+re.toPrecision(12):new Cx(+re.toPrecision(12),+im.toPrecision(12)))})
+    .sort((a,b)=>(isC(a)?1:0)-(isC(b)?1:0)||(isC(a)?a.re-b.re||a.im-b.im:a-b));
+}
+const supN=n=>String(n).split('').map(d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]).join('');
+const nv=v=>out(round15(Math.abs(v)<1e-12?0:v),S.set.frac);
+function polyStr(c){
+  const n=c.length-1;let s='';
+  c.forEach((a,i)=>{const p=n-i;a=round15(a);if(a===0&&i>0)return;
+    const sg=a<0?' − ':(s?' + ':'');const m=Math.abs(a);
+    const coef=(m===1&&p>0)?'':nv(m);s+=(i===0?(a<0?'−':''):sg)+coef+(p>0?'λ'+(p>1?supN(p):''):'')});
+  return s||'0';
+}
+function matEl(M){
+  const d=document.createElement('div');d.className='mat';d.style.gridTemplateColumns=`repeat(${M[0].length},auto)`;
+  M.flat().forEach(v=>{const c=document.createElement('span');c.textContent=nv(v);d.appendChild(c)});return d;
+}
+function mres(title,content){
+  const d=document.createElement('div');d.className='mres';const h=document.createElement('div');h.innerHTML=title;d.appendChild(h);
+  if(content!==undefined&&content!==null)d.appendChild(typeof content==='string'?Object.assign(document.createElement('div'),{textContent:content}):content);
+  return d;
 }
 function num(str,label){ // a box with a number or expression
   const t=prepFormula(String(str));if(t==='')return 0;
@@ -1932,15 +2048,39 @@ function solve(){
       showOut([head+' < 0. Действительных корней нет, есть два комплексных:',row([ansBtn('x₁ =',z1),ansBtn('x₂ =',z2)])]);
       return;
     }
-    closePad();const n=solveMode==='sys2'?2:3,ins=sysFields;
-    const M=[];for(let r=0;r<n;r++){M.push(ins.slice(r*(n+1),(r+1)*(n+1)).map((el,k)=>num(el.expr,(k<n?['x','y','z'][k]:'=')+', строка '+(r+1))))}
-    for(let c=0;c<n;c++){
-      let piv=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[piv][c]))piv=r;
-      if(Math.abs(M[piv][c])<1e-12){showOut([errBox('У системы нет единственного решения: решений нет или их бесконечно много.')]);return}
-      [M[c],M[piv]]=[M[piv],M[c]];
-      for(let r=0;r<n;r++){if(r===c)continue;const k=M[r][c]/M[c][c];for(let j=c;j<=n;j++)M[r][j]-=k*M[c][j]}
+    closePad();
+    if(solveMode==='mat'){
+      const R=matR,C=matC,A=[];
+      for(let r=0;r<R;r++)A.push(matFields.slice(r*C,(r+1)*C).map((f,c)=>num(f.expr,'строка '+(r+1)+', столбец '+(c+1))));
+      const items=[];const {M:E,piv}=rref(A);
+      if(R===C){
+        const d=round15(det(A));
+        items.push(row([ansBtn('det A =',d)]));
+        items.push(mres('<b>Ранг</b> = '+piv.length+'&nbsp;&nbsp;&nbsp;<b>След</b> = '+nv(A.reduce((s,r,i)=>s+r[i],0))));
+        const inv=d!==0?inverse(A):null;
+        items.push(mres('<b>Обратная матрица A⁻¹</b>',inv?matEl(inv):'Не существует: определитель равен 0.'));
+        const cp=charPoly(A);
+        items.push(mres('<b>Характеристический многочлен</b>',polyStr(cp)));
+        const ev=polyRoots(cp);
+        items.push(mres('<b>Собственные значения</b>',row(ev.map((v,i)=>ansBtn('λ'+String(i+1).split('').map(x=>'₀₁₂₃₄₅₆₇₈₉'[x]).join('')+' =',v)))));
+      }else{
+        items.push(mres('<b>Ранг</b> = '+piv.length+'. Определитель, обратная матрица и собственные значения есть только у квадратной матрицы.'));
+      }
+      items.push(mres('<b>Транспонированная Aᵀ</b>',matEl(A[0].map((_,j)=>A.map(r=>r[j])))));
+      items.push(mres('<b>Ступенчатый вид</b> (метод Гаусса)',matEl(E)));
+      if(R===C)items.push(mres('<b>A²</b>',matEl(A.map(r=>A[0].map((_,j)=>r.reduce((s,v,k)=>s+v*A[k][j],0))))));
+      showOut(items);return;
     }
-    showOut(['Решение:',row(M.map((r,i)=>ansBtn(['x','y','z'][i]+' =',r[n]/r[i])))]);
+    const n=sysN,M=[];
+    for(let r=0;r<n;r++)M.push(sysFields.slice(r*(n+1),(r+1)*(n+1)).map((el,k)=>num(el.expr,(k<n?VARS[k]:'=')+', строка '+(r+1))));
+    const {M:E,piv}=rref(M);
+    if(piv.includes(n)){showOut([errBox('Решений нет: уравнения противоречат друг другу.')]);return}
+    if(piv.length===n){showOut(['Решение:',row(VARS.slice(0,n).map((v,i)=>ansBtn(v+' =',E[i][n])))]);return}
+    const free=VARS.slice(0,n).filter((_,j)=>!piv.includes(j));
+    const lines=piv.map((pc,i)=>{let t=VARS[pc]+' = '+nv(E[i][n]);
+      for(let j=0;j<n;j++){if(piv.includes(j))continue;const a=-E[i][j];if(Math.abs(a)<1e-12)continue;t+=(a<0?' − ':' + ')+(Math.abs(a)===1?'':nv(Math.abs(a)))+VARS[j]}
+      return t.replace(/^(\w) = 0 ([+−]) /,(m,v,sg)=>v+' = '+(sg==='−'?'−':''))});
+    showOut(['Бесконечно много решений. '+free.join(', ')+(free.length>1?' — любые числа':' — любое число')+', а остальные:',lines.map(l=>'<div style="font-size:19px">'+l+'</div>').join('')]);
   }catch(e){showOut([errBox(e.message||'Не получилось решить')])}
 }
 $('solveBtn').addEventListener('click',solve);
@@ -1965,10 +2105,29 @@ function cleanOcr(line){
 }
 window.onPhotoText=function(text,err){
   if(err){if(err!=='cancel')snack(err);return}
+  const note=$('photoNote');
   const lines=String(text||'').split(/\n+/).map(cleanOcr).filter(l=>/\d|x/.test(l)&&/[=+−×÷^⟦²³√\/]/.test(l));
   if(!lines.length){snack('Не нашёл на фото пример. Снимите ближе и ровнее');return}
+  const sysLines=lines.filter(l=>l.includes('=')&&/[xyzuvw]/.test(l));
+  if(sysLines.length>=2&&sysLines.some(l=>/[yzuvw]/.test(l))){ // a system of linear equations
+    const used=VARS.filter(v=>sysLines.some(l=>l.includes(v))),n=Math.min(6,Math.max(used.length,sysLines.length));
+    const names=VARS.slice(0,n);
+    const rows=[];
+    try{
+      for(const l of sysLines.slice(0,n)){
+        const [L,R]=l.split('=');
+        const f=vals=>{const vars={};names.forEach((v,i)=>vars[v]=vals[i]);const ren=s=>{let t=s;used.forEach((v,i)=>{if(v!==names[i])t=t.split(v).join('#'+i)});names.forEach((v,i)=>{t=t.split('#'+i).join(v)});return t};
+          return evaluate(ren(L),{angle:S.set.angle,ans:S.ans,vars,x:vars.x})-evaluate(ren(R||'0'),{angle:S.set.angle,ans:S.ans,vars,x:vars.x})};
+        const z=names.map(()=>0),c0=f(z),coef=names.map((_,i)=>f(names.map((_,j)=>i===j?1:0))-c0);
+        const test=names.map((_,i)=>i+2);if(Math.abs(f(test)-(c0+coef.reduce((s,a,i)=>s+a*test[i],0)))>1e-6*(1+Math.abs(c0)))throw 0;
+        rows.push([...coef.map(round15),round15(-c0)]);
+      }
+    }catch(e){snack('Похоже на систему, но не удалось разобрать её. Проверьте фото');return}
+    setTab(2);segSolve.querySelector('[data-v="sys"]').click();buildSys(n,rows);
+    note.hidden=false;note.innerHTML='<div class="muted">Распознал систему из '+rows.length+' уравнений. Проверьте коэффициенты и при необходимости исправьте.</div>';
+    solve();return;
+  }
   const eqLine=lines.find(l=>l.includes('=')&&l.includes('x'))||lines.find(l=>l.includes('x'));
-  const note=$('photoNote');
   if(eqLine){
     setTab(2);
     segSolve.querySelector('[data-v="eq"]').click();
