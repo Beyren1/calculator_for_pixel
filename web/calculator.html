@@ -97,9 +97,12 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .rbody{display:inline-flex;align-items:center;border-top:max(2px,.055em) solid currentColor;margin-top:.14em;padding:.04em .1em 0;min-width:.7em;min-height:1em}
 .ridx{display:flex;justify-content:center;font-size:.45em;align-self:flex-start;min-width:1em;min-height:1em;margin-right:-.5em;position:relative;z-index:1}
 .lgw{display:inline-flex;align-items:center;margin:0 .04em}
+.cmb{display:inline-flex;align-items:center;margin:0 .06em}
+.cst{display:inline-flex;flex-direction:column-reverse;justify-content:flex-start;font-size:.55em;line-height:1.05;margin-left:.06em;min-height:2.1em;align-self:stretch}
+.clo,.cup{display:inline-flex;justify-content:center;min-width:.9em;min-height:1em}
 .lsub{display:inline-flex;justify-content:center;font-size:.5em;align-self:flex-end;min-width:1em;min-height:1em;margin:0 .06em -.1em .04em}
 .larg{display:inline-flex;align-items:center;min-width:.6em;min-height:1em}
-.boxes .rbody:not(:has(.ch)),.boxes .ridx:not(:has(.ch)),.boxes .lsub:not(:has(.ch)),.boxes .larg:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
+.boxes .rbody:not(:has(.ch)),.boxes .ridx:not(:has(.ch)),.boxes .lsub:not(:has(.ch)),.boxes .larg:not(:has(.ch)),.boxes .clo:not(:has(.ch)),.boxes .cup:not(:has(.ch)){outline:1.5px dashed color-mix(in srgb,currentColor 45%,transparent);outline-offset:-2px;border-radius:4px}
 .expr:focus-visible{box-shadow:inset 0 -2px 0 var(--focus)}
 .result{display:block;min-height:1.3em;font-size:26px;line-height:1.3;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;padding:0 2px;border-radius:12px;
@@ -122,7 +125,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 
 /* Keypads: all functions on one screen */
 .pads{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain}
-.sci{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:minmax(38px,1fr);gap:6px;flex:1 1 auto}
+.sci{display:grid;grid-template-columns:repeat(60,1fr);grid-auto-rows:minmax(38px,1fr);row-gap:6px;column-gap:0;margin:0 -3px;flex:1 1 auto}
 .base{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,minmax(46px,1fr));gap:var(--gap);flex:1.25 1 auto}
 .key{position:relative;overflow:hidden;border:0;border-radius:999px;font:inherit;display:flex;align-items:center;justify-content:center;
   min-width:0;min-height:38px;padding:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;white-space:nowrap;
@@ -133,7 +136,8 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .key.op{background:var(--op);color:var(--on-op);font-size:clamp(24px,3.4vh,34px)}
 .key.eq{background:var(--eq);color:var(--on-eq);font-size:clamp(26px,3.6vh,36px)}
 .key.util{background:var(--util);color:var(--on-util);font-size:clamp(20px,2.8vh,26px);font-weight:500}
-.sci>.key{grid-column:span 2}
+.sci>.key{grid-column:span 10;margin:0 3px;min-width:0}
+.sci>.key.r5{grid-column:span 12}
 .key.sci{background:var(--sci);color:var(--on-sci);font-size:16px;border-radius:14px}
 .key.sci:active,.key.sci.pressed{border-radius:999px}
 .key.sci[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle);font-weight:500}
@@ -199,6 +203,13 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .seg button:first-child{border-left:0}
 .seg button[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle)}
 .seg button:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.seg6{display:grid;grid-template-columns:repeat(3,1fr);border-radius:18px}
+.seg6 button{border-left:1px solid var(--muted);border-top:1px solid var(--muted)}
+.seg6 button:nth-child(3n+1){border-left:0}.seg6 button:nth-child(-n+3){border-top:0}
+#segSolve{position:sticky;top:0;z-index:4;background:var(--bg);flex:none;box-shadow:0 -14px 0 6px var(--bg)}
+.mx{font-size:22px;line-height:1.3;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;overflow-x:auto;padding:4px 0}
+.mx .ln{display:inline-flex;align-items:center;white-space:nowrap}
+.mx .int{font-size:1.5em;font-style:italic;font-weight:300;margin-right:-.05em}
 .seg button small{display:block;font-size:11px;font-weight:400;opacity:.75;letter-spacing:.03em}
 .row{display:flex;align-items:center;gap:12px;min-height:48px}
 .row .label{flex:1;min-width:0}
@@ -378,11 +389,13 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
     <button class="btn tonal" id="photoClip" type="button">📋 Из буфера</button>
   </div>
   <div class="out-card" id="photoNote" hidden></div>
-  <div class="seg" id="segSolve" role="group" aria-label="Тип задачи">
+  <div class="seg seg6" id="segSolve" role="group" aria-label="Тип задачи">
     <button type="button" data-v="eq" aria-pressed="true">Уравнение</button>
     <button type="button" data-v="quad">ax²+bx+c</button>
     <button type="button" data-v="sys">Система</button>
     <button type="button" data-v="mat">Матрица</button>
+    <button type="button" data-v="int">∫ Интеграл</button>
+    <button type="button" data-v="der">f′ Производная</button>
   </div>
   <div id="solveEq" class="out-card">
     <div class="muted">Нажмите на поле и наберите уравнение с x на клавиатуре снизу, например <b>2x+3=7</b> или <b>sin(x)=0.5</b>. Углы — как в настройках калькулятора.</div>
@@ -408,6 +421,35 @@ body.fpad-open .snackbar{bottom:calc(var(--fpad-h,330px) + 12px)}
     <div class="row"><div class="label"><b>Столбцов</b></div>
       <div class="stepper"><button class="icon-btn" type="button" id="matCm" aria-label="Меньше столбцов">−</button><output id="matC">3</output><button class="icon-btn" type="button" id="matCp" aria-label="Больше столбцов">+</button></div></div>
     <div class="sys" id="matGrid"></div>
+    <div class="row"><div class="label"><b>Действие</b></div>
+      <select class="sel" id="matOp" aria-label="Действие с матрицей">
+        <option value="props">Всё о матрице A</option><option value="add">A + B</option><option value="sub">A − B</option>
+        <option value="mul">A · B</option><option value="bmul">B · A</option><option value="solve">A · X = B</option>
+        <option value="k">k · A</option><option value="pow">Aⁿ</option></select></div>
+    <div id="matKBox" hidden><div class="field"><label id="matKLabel">k</label><div class="mfield boxes" id="matK" role="textbox" tabindex="0" aria-label="Число"></div></div></div>
+    <div id="matBBox" hidden>
+      <div class="muted"><b>Матрица B</b></div>
+      <div class="row"><div class="label"><b>Строк</b></div>
+        <div class="stepper"><button class="icon-btn" type="button" id="matBRm" aria-label="Меньше строк B">−</button><output id="matBR">3</output><button class="icon-btn" type="button" id="matBRp" aria-label="Больше строк B">+</button></div></div>
+      <div class="row"><div class="label"><b>Столбцов</b></div>
+        <div class="stepper"><button class="icon-btn" type="button" id="matBCm" aria-label="Меньше столбцов B">−</button><output id="matBC">3</output><button class="icon-btn" type="button" id="matBCp" aria-label="Больше столбцов B">+</button></div></div>
+      <div class="sys" id="matGridB"></div>
+    </div>
+  </div>
+  <div id="solveInt" class="out-card" hidden>
+    <div class="muted">Функция от x. Пределы можно не заполнять — тогда найду только первообразную. Тригонометрия здесь в радианах.</div>
+    <div class="field"><label>Под интегралом</label><div class="mfield boxes" id="intF" role="textbox" tabindex="0" aria-label="Функция под интегралом" data-ph="Например: x·sin(x)"></div></div>
+    <div class="sys" style="grid-template-columns:1fr 1fr">
+      <div class="field"><label>от (нижний)</label><div class="mfield boxes" id="intA" role="textbox" tabindex="0" aria-label="Нижний предел"></div></div>
+      <div class="field"><label>до (верхний)</label><div class="mfield boxes" id="intB" role="textbox" tabindex="0" aria-label="Верхний предел"></div></div>
+    </div>
+  </div>
+  <div id="solveDer" class="out-card" hidden>
+    <div class="muted">Функция от x. Точку можно не заполнять — тогда покажу только формулу производной. Тригонометрия здесь в радианах.</div>
+    <div class="field"><label>f(x)</label><div class="mfield boxes" id="derF" role="textbox" tabindex="0" aria-label="Функция" data-ph="Например: x²·eˣ"></div></div>
+    <div class="row"><div class="label"><b>Порядок</b><span>f′, f″, f‴…</span></div>
+      <div class="stepper"><button class="icon-btn" type="button" id="derMinus" aria-label="Меньше">−</button><output id="derN">1</output><button class="icon-btn" type="button" id="derPlus" aria-label="Больше">+</button></div></div>
+    <div class="field"><label>в точке x₀</label><div class="mfield boxes" id="derX" role="textbox" tabindex="0" aria-label="Точка"></div></div>
   </div>
   <div class="row-actions"><button class="btn" id="solveBtn" type="button">Решить</button><span class="muted" style="color:var(--muted);font-size:13px">Нажмите на ответ, чтобы вставить его в калькулятор</span></div>
   <div class="out-card" id="solveOut" aria-live="polite" hidden></div>
@@ -672,10 +714,10 @@ function cpow(a,b){
 // ctx: {angle:'deg'|'rad'|'grad', ans:number}
 // 2D boxes typed on screen → plain syntax:
 // ⦃a⦙b⦄ fraction, ⟦e⟧ raised power, ⟬от⁅до⁆тело⟭ Σ, ⟮…⟭ ∏, ⟨x⟩ √x, ⟪n⁑x⟫ n-th root, ⦗b⦘x⦚ log base b
-const S_OPEN={'⦃':'f','⟦':'p','⟬':'Σ','⟮':'∏','⟨':'r','⟪':'n','⦗':'l'};
-const S_SEP='⦙⁅⁆⁑⦘',S_CLOSE='⦄⟧⟭⟩⟫⦚';
+const S_OPEN={'⦃':'f','⟦':'p','⟬':'Σ','⟮':'∏','⟨':'r','⟪':'n','⦗':'l','⧼':'C','⦅':'A','⦇':'P'};
+const S_SEP='⦙⁅⁆⁑⦘⁏',S_CLOSE='⦄⟧⟭⟩⟫⦚⧽⦆⦈';
 function normStruct(s){
-  if(!/[⦃⟦⟬⟮⟨⟪⦗]/.test(s))return s;
+  if(!/[⦃⟦⟬⟮⟨⟪⦗⧼⦅⦇]/.test(s))return s;
   const st=[{b:['']}],top=()=>st[st.length-1];
   const need=(f,n)=>{if(f.b.length<n||f.b.some(x=>x===''))throw new CalcError('syntax',f.k==='Σ'||f.k==='∏'?'Заполните «от», «до» и выражение':undefined)};
   const close=()=>{
@@ -687,6 +729,9 @@ function normStruct(s){
       case 'r':r='√('+b[0]+')';break;
       case 'n':need(f,2);r='(('+b[0]+')ⁿ√('+b[1]+'))';break;
       case 'l':need(f,2);r='logₓ(('+b[0]+'),('+b[1]+'))';break;
+      case 'C':need(f,2);r='(('+b[0]+')C('+b[1]+'))';break;
+      case 'A':need(f,2);r='(('+b[0]+')P('+b[1]+'))';break;
+      case 'P':need(f,1);r='(('+b[0]+')!)';break;
     }
     top().b[top().b.length-1]+=r;
   };
@@ -936,6 +981,404 @@ function toFrac(v){
   return null;
 }
 function fracStr(v){if(isC(v))return null;const f=toFrac(v);return f?(f.n<0?'−':'')+Math.abs(f.n)+'⁄'+f.d:null}
+/* ---- symbolic calculus: derivative, antiderivative (x in radians) ---- */
+const SYM=(()=>{
+  class SymErr extends Error{}
+  const N=v=>({t:'num',v}),X={t:'sym',v:'x'},PI={t:'sym',v:'π'},E={t:'sym',v:'e'};
+  const isN=(n,v)=>n.t==='num'&&(v===undefined||Math.abs(n.v-v)<1e-15);
+  const FN_ALIAS={'sin⁻¹':'arcsin','cos⁻¹':'arccos','tan⁻¹':'arctan','cot⁻¹':'arccot','sinh⁻¹':'arsinh','cosh⁻¹':'arcosh','tanh⁻¹':'artanh','модуль':'abs','log':'lg','log₂':'log2'};
+  const FNS=new Set(['sin','cos','tan','cot','sec','csc','arcsin','arccos','arctan','arccot','sinh','cosh','tanh','arsinh','arcosh','artanh','ln','lg','log2','abs']);
+  /* parse with the calculator's tokenizer */
+  function parse(src){
+    const toks=tokenize(normStruct(src));let p=0;
+    const peek=()=>toks[p],next=()=>toks[p++],isOp=(t,v)=>!!t&&t.t==='op'&&t.v===v;
+    const starts=t=>!!t&&(t.t==='num'||t.t==='const'||t.t==='var'||t.t==='fn'||t.t==='(');
+    function expr(){let l=term();while(isOp(peek(),'+')||isOp(peek(),'-')){const o=next().v,r=term();l=o==='+'?add(l,r):add(l,mul(N(-1),r))}return l}
+    function term(){let v=unary();for(;;){const t=peek();
+      if(isOp(t,'*')){next();v=mul(v,unary())}
+      else if(isOp(t,'/')){next();v=mul(v,pow(unary(),N(-1)))}
+      else if(isOp(t,'mod'))throw new SymErr('Остаток здесь не поддерживается');
+      else if(starts(t))v=mul(v,unary());else break}return v}
+    function unary(){const t=peek();if(isOp(t,'-')){next();return mul(N(-1),unary())}if(isOp(t,'+')){next();return unary()}return power()}
+    function power(){
+      let b=postfix();
+      while(isOp(peek(),'frac')){next();b=mul(b,pow(postfix(),N(-1)))}
+      const t=peek();
+      if(isOp(t,'^')){next();return pow(b,unary())}
+      if(isOp(t,'root')){next();return pow(unary(),pow(b,N(-1)))}
+      if(isOp(t,'P')||isOp(t,'C'))throw new SymErr('Сочетания здесь не поддерживаются');
+      return b;
+    }
+    function postfix(){let v=primary();for(;;){const t=peek();if(!t||t.t!=='post')break;next();
+      if(t.v==='²')v=pow(v,N(2));else if(t.v==='³')v=pow(v,N(3));else if(t.v==='inv')v=pow(v,N(-1));
+      else if(t.v==='°')v=mul(v,PI,N(1/180));
+      else if(t.v==='!'&&v.t==='num')v=N(fact(v.v));
+      else throw new SymErr('Эту операцию с x я не умею');}return v}
+    function cp(){const t=peek();if(!t)return;if(t.t===')'){next();return}throw new SymErr('syntax')}
+    function primary(){
+      const t=next();if(!t)throw new SymErr('syntax');
+      if(t.t==='num')return N(t.v);
+      if(t.t==='const'){if(t.v==='π')return PI;if(t.v==='e')return E;throw new SymErr('Здесь нужны только действительные числа')}
+      if(t.t==='var'){if(t.n==='x')return X;throw new SymErr('Пишите функцию от x')}
+      if(t.t==='('){const v=expr();cp();return v}
+      if(t.t==='fn'){
+        let f=FN_ALIAS[t.v]||t.v;
+        if(f==='√'||f==='∛'){let a;if(peek()&&peek().t==='('){next();a=expr();cp()}else a=postfix();return pow(a,N(f==='√'?1/2:1/3))}
+        if(!peek()||peek().t!=='(')throw new SymErr('syntax');next();
+        const args=[expr()];while(peek()&&peek().t===','){next();args.push(expr())}cp();
+        if(f==='logₓ'&&args.length===2)return mul(fn('ln',args[1]),pow(fn('ln',args[0]),N(-1)));
+        if(args.length!==1||!FNS.has(f))throw new SymErr('Функцию '+t.v+' я здесь не умею');
+        return fn(f,args[0]);
+      }
+      throw new SymErr('syntax');
+    }
+    const v=expr();if(p<toks.length)throw new SymErr('syntax');return v;
+  }
+  /* canonical keys and smart constructors */
+  function key(n){
+    switch(n.t){case 'num':return '#'+n.v;case 'sym':return n.v;
+      case 'add':return '+('+n.a.map(key).join(',')+')';case 'mul':return '*('+n.a.map(key).join(',')+')';
+      case 'pow':return '^('+key(n.a)+','+key(n.b)+')';case 'fn':return n.f+'('+key(n.a)+')'}
+  }
+  const hasX=n=>n.t==='sym'?n.v==='x':n.t==='num'?false:n.t==='fn'?hasX(n.a):n.t==='pow'?hasX(n.a)||hasX(n.b):n.a.some(hasX);
+  const near=v=>{const r=Math.round(v);return Math.abs(v-r)<1e-12*Math.max(1,Math.abs(v))?r:null};
+  function splitCoef(t){ // term → [coef, rest]
+    if(t.t==='num')return [t.v,null];
+    if(t.t==='mul'&&t.a[0].t==='num'){const r=t.a.slice(1);return [t.a[0].v,r.length===1?r[0]:{t:'mul',a:r}]}
+    return [1,t];
+  }
+  function deg(n){ // sort weight: higher power of x first
+    if(n.t==='sym'&&n.v==='x')return 1;
+    if(n.t==='pow'&&n.a.t==='sym'&&n.a.v==='x'&&n.b.t==='num')return n.b.v;
+    if(n.t==='mul')return n.a.reduce((s,f)=>s+(f.t==='num'?0:deg(f)),0);
+    return hasX(n)?0.5:-1e9;
+  }
+  function add(...args){
+    const terms=[];
+    const push=n=>{if(n.t==='add')n.a.forEach(push);else terms.push(n)};args.forEach(push);
+    let c=0;const m=new Map();
+    for(const t of terms){const [k,r]=splitCoef(t);if(!r){c+=k;continue}const kk=key(r);const e=m.get(kk);if(e)e.c+=k;else m.set(kk,{c:k,r})}
+    const out=[];
+    for(const {c:k,r} of m.values()){if(Math.abs(k)<1e-14)continue;out.push(k===1?r:mul(N(k),r))}
+    out.sort((a,b)=>deg(b)-deg(a)||(key(a)<key(b)?-1:1));
+    if(Math.abs(c)>1e-15)out.push(N(c));
+    if(!out.length)return N(0);
+    return out.length===1?out[0]:{t:'add',a:out};
+  }
+  function mul(...args){
+    const fs=[];const push=n=>{if(n.t==='mul')n.a.forEach(push);else fs.push(n)};args.forEach(push);
+    let c=1;const m=new Map();
+    for(const f of fs){
+      if(f.t==='num'){c*=f.v;continue}
+      const b=f.t==='pow'?f.a:f,e=f.t==='pow'?f.b:N(1),kk=key(b),o=m.get(kk);
+      if(o)o.e=add(o.e,e);else m.set(kk,{b,e});
+    }
+    if(c===0)return N(0);
+    const out=[];
+    for(const {b,e} of m.values()){const p=pow(b,e);if(p.t==='num')c*=p.v;else if(p.t==='mul')p.a.forEach(q=>q.t==='num'?c*=q.v:out.push(q));else out.push(p)}
+    out.sort((a,b)=>{const isx=n=>n.t==='sym'&&n.v==='x',w=n=>isx(n)||(n.t==='pow'&&isx(n.a))?0:n.t==='add'||(n.t==='pow'&&n.a.t==='add')?1:2;return w(a)-w(b)||(key(a)<key(b)?-1:1)});
+    if(c!==1||!out.length)out.unshift(N(c));
+    return out.length===1?out[0]:{t:'mul',a:out};
+  }
+  function pow(a,b){
+    if(isN(b,0))return N(1);if(isN(b,1))return a;
+    if(isN(a,1))return N(1);
+    if(isN(a,0)&&b.t==='num'){if(b.v<0)throw new SymErr('Деление на ноль');return N(0)}
+    if(a.t==='num'&&b.t==='num'){
+      const r=Math.pow(a.v,b.v);
+      if(Number.isInteger(b.v)&&isFinite(r))return N(r);
+      const n=near(r);if(n!==null&&isFinite(r))return N(n);
+      if(a.v<0)throw new SymErr('Вне области определения');
+    }
+    if(a.t==='pow'&&b.t==='num'&&Number.isInteger(b.v))return pow(a.a,mul(a.b,b));
+    if(a.t==='pow'&&b.t==='num'&&a.b.t==='num'&&Number.isInteger(1/b.v)&&!(Number.isInteger(a.b.v)&&a.b.v%2===0))return pow(a.a,N(a.b.v*b.v)); // √(x³) → x^(3/2)
+    if(a.t==='mul'&&b.t==='num'&&Number.isInteger(b.v))return mul(...a.a.map(f=>pow(f,b)));
+    if(a===E||a.t==='sym'&&a.v==='e'){if(b.t==='fn'&&b.f==='ln')return b.a;
+      if(b.t==='mul'){const i=b.a.findIndex(f=>f.t==='fn'&&f.f==='ln');if(i>=0&&b.a.length===2&&b.a[0].t==='num')return pow(b.a[i].a,b.a[0])}}
+    return {t:'pow',a,b};
+  }
+  function fn(f,a){
+    if(f==='ln'){if(a.t==='sym'&&a.v==='e')return N(1);if(a.t==='pow'&&a.a.t==='sym'&&a.a.v==='e')return a.b;if(isN(a,1))return N(0)}
+    if(f==='abs'&&a.t==='num')return N(Math.abs(a.v));
+    if(f==='abs'&&a.t==='pow'&&a.a.t==='sym'&&a.a.v==='e')return a;
+    if(!hasX(a)){const v=evalN({t:'fn',f,a},0),n=near(v);if(n!==null)return N(n)}
+    return {t:'fn',f,a};
+  }
+  const neg=n=>mul(N(-1),n),inv=n=>pow(n,N(-1)),sub=(a,b)=>add(a,neg(b));
+  /* numeric value, x in radians */
+  const F={sin:Math.sin,cos:Math.cos,tan:Math.tan,cot:t=>1/Math.tan(t),sec:t=>1/Math.cos(t),csc:t=>1/Math.sin(t),arcsin:Math.asin,arccos:Math.acos,arctan:Math.atan,arccot:t=>Math.PI/2-Math.atan(t),
+    sinh:Math.sinh,cosh:Math.cosh,tanh:Math.tanh,arsinh:Math.asinh,arcosh:Math.acosh,artanh:Math.atanh,ln:Math.log,lg:Math.log10,log2:Math.log2,abs:Math.abs};
+  function evalN(n,x){
+    switch(n.t){case 'num':return n.v;case 'sym':return n.v==='x'?x:n.v==='π'?Math.PI:Math.E;
+      case 'add':return n.a.reduce((s,t)=>s+evalN(t,x),0);case 'mul':return n.a.reduce((s,t)=>s*evalN(t,x),1);
+      case 'pow':{const a=evalN(n.a,x),b=evalN(n.b,x);let r=Math.pow(a,b);
+        if(Number.isNaN(r)&&a<0){const q=1/b,qi=Math.round(q);if(Math.abs(q-qi)<1e-9&&Math.abs(qi)%2===1)r=-Math.pow(-a,b);else if(n.b.t==='num'){const fr=ratio(n.b.v);if(fr&&fr[1]%2===1)r=(fr[0]%2?-1:1)*Math.pow(-a,b)}}
+        return r}
+      case 'fn':return F[n.f](evalN(n.a,x))}
+  }
+  /* derivative */
+  function d(n){
+    switch(n.t){
+      case 'num':return N(0);case 'sym':return N(n.v==='x'?1:0);
+      case 'add':return add(...n.a.map(d));
+      case 'mul':{
+        const dn=n.a.filter(f=>f.t==='pow'&&f.b.t==='num'&&f.b.v<0&&hasX(f.a)),up=n.a.filter(f=>!dn.includes(f));
+        if(dn.length&&up.some(hasX)){ // quotient rule (u′v − uv′)/v²
+          const U=mul(...up),V=mul(...dn.map(f=>pow(f.a,N(-f.b.v))));
+          let top=sub(mul(d(U),V),mul(U,d(V)));const te=expand(top);if(key(te).length<key(top).length)top=te;
+          return mul(top,pow(V,N(-2)));
+        }
+        return add(...n.a.map((f,i)=>mul(...n.a.map((g,j)=>i===j?d(g):g))));}
+      case 'pow':{const a=n.a,b=n.b;
+        if(!hasX(b))return mul(b,pow(a,add(b,N(-1))),d(a));
+        if(!hasX(a))return mul(n,fn('ln',a),d(b));
+        return mul(n,add(mul(d(b),fn('ln',a)),mul(b,d(a),inv(a))));}
+      case 'fn':{const u=n.a,du=d(u);if(isN(du,0))return N(0);let r;
+        switch(n.f){
+          case 'sin':r=fn('cos',u);break;case 'cos':r=neg(fn('sin',u));break;
+          case 'tan':r=pow(fn('cos',u),N(-2));break;case 'cot':r=neg(pow(fn('sin',u),N(-2)));break;
+          case 'sec':r=mul(fn('sec',u),fn('tan',u));break;case 'csc':r=neg(mul(fn('csc',u),fn('cot',u)));break;
+          case 'arcsin':r=pow(sub(N(1),pow(u,N(2))),N(-1/2));break;case 'arccos':r=neg(pow(sub(N(1),pow(u,N(2))),N(-1/2)));break;
+          case 'arctan':r=inv(add(N(1),pow(u,N(2))));break;case 'arccot':r=neg(inv(add(N(1),pow(u,N(2)))));break;
+          case 'sinh':r=fn('cosh',u);break;case 'cosh':r=fn('sinh',u);break;case 'tanh':r=pow(fn('cosh',u),N(-2));break;
+          case 'arsinh':r=pow(add(pow(u,N(2)),N(1)),N(-1/2));break;case 'arcosh':r=pow(add(pow(u,N(2)),N(-1)),N(-1/2));break;
+          case 'artanh':r=inv(sub(N(1),pow(u,N(2))));break;
+          case 'ln':r=inv(u);break;case 'lg':r=inv(mul(u,fn('ln',N(10))));break;case 'log2':r=inv(mul(u,fn('ln',N(2))));break;
+          case 'abs':r=mul(u,inv(fn('abs',u)));break;
+        }
+        return mul(r,du);}
+    }
+  }
+  /* polynomials */
+  function poly(n){ // coefficient array (low → high) or null
+    if(!hasX(n)){const v=evalN(n,0);return isFinite(v)?[v]:null}
+    if(n.t==='sym')return [0,1];
+    const pm=(a,b)=>{const r=Array(a.length+b.length-1).fill(0);a.forEach((x,i)=>b.forEach((y,j)=>r[i+j]+=x*y));return r};
+    if(n.t==='add'){const r=[];for(const t of n.a){const q=poly(t);if(!q)return null;q.forEach((v,i)=>r[i]=(r[i]||0)+v)}return trim(r)}
+    if(n.t==='mul'){let r=[1];for(const t of n.a){const q=poly(t);if(!q)return null;r=pm(r,q)}return trim(r)}
+    if(n.t==='pow'&&n.b.t==='num'&&Number.isInteger(n.b.v)&&n.b.v>0&&n.b.v<=12){const q=poly(n.a);if(!q)return null;let r=[1];for(let i=0;i<n.b.v;i++)r=pm(r,q);return trim(r)}
+    return null;
+  }
+  function trim(r){r=r.map(v=>Math.abs(v)<1e-13?0:v);while(r.length>1&&r[r.length-1]===0)r.pop();return r}
+  const fromPoly=c=>add(...c.map((v,i)=>mul(N(v),pow(X,N(i)))));
+  const lin=n=>{const p=poly(n);return p&&p.length===2&&p[1]!==0?p:null}; // [b,a] for ax+b
+  function subst(n,u){ // replace x by u
+    switch(n.t){case 'num':return n;case 'sym':return n.v==='x'?u:n;case 'add':return add(...n.a.map(t=>subst(t,u)));case 'mul':return mul(...n.a.map(t=>subst(t,u)));
+      case 'pow':return pow(subst(n.a,u),subst(n.b,u));case 'fn':return fn(n.f,subst(n.a,u))}
+  }
+  function expand(n){
+    if(n.t==='add')return add(...n.a.map(expand));
+    if(n.t==='pow'&&n.b.t==='num'&&Number.isInteger(n.b.v)&&n.b.v>1&&n.b.v<=8&&n.a.t==='add'){let r=N(1);const a=expand(n.a);for(let i=0;i<n.b.v;i++)r=distribute(r,a);return r}
+    if(n.t==='mul'){let r=N(1);for(const f of n.a)r=distribute(r,expand(f));return r}
+    return n;
+  }
+  function distribute(a,b){const A=a.t==='add'?a.a:[a],B=b.t==='add'?b.a:[b];return add(...A.flatMap(x=>B.map(y=>mul(x,y))))}
+  /* antiderivative */
+  let depth=0;
+  function I(n){
+    if(++depth>40){depth--;return null}
+    try{return I0(n)}finally{depth--}
+  }
+  function I0(n){
+    if(!hasX(n))return mul(n,X);
+    if(n.t==='add'){const r=n.a.map(I);return r.every(Boolean)?add(...r):null}
+    if(n.t==='mul'){
+      const c=n.a.filter(f=>!hasX(f)),v=n.a.filter(hasX);
+      if(c.length){const r=I(v.length===1?v[0]:mul(...v));return r&&mul(...c,r)}
+    }
+    // polynomials and rational functions
+    const P=poly(n);if(P)return fromPoly(P.map((v,i)=>[i+1,v/(i+1)]).reduce((r,[i,v])=>(r[i]=v,r),[0]));
+    const rat=rational(n);if(rat!==undefined)return rat;
+    if(n.t==='pow'){
+      const L=lin(n.a);
+      if(L&&!hasX(n.b)){const k=evalN(n.b,0);if(Math.abs(k+1)<1e-15)return mul(N(1/L[1]),fn('ln',fn('abs',n.a)));return mul(N(1/L[1]),inv(add(n.b,N(1))),pow(n.a,add(n.b,N(1))))}
+      const Lb=lin(n.b);
+      if(Lb&&!hasX(n.a))return mul(n,inv(mul(N(Lb[1]),fn('ln',n.a))));
+      const Q=poly(n.a);
+      if(Q&&Q.length===3&&isN(n.b,-1/2)){const [cc,b,a]=Q,u=add(mul(N(2*a),X),N(b));
+        if(a>0)return mul(N(1/Math.sqrt(a)),fn('ln',fn('abs',add(u,mul(N(2*Math.sqrt(a)),pow(n.a,N(1/2)))))));
+        const D=b*b-4*a*cc;if(D>0)return mul(N(1/Math.sqrt(-a)),fn('arcsin',mul(N(-1/Math.sqrt(D)),u)));}
+      if(Q&&Q.length===3&&isN(n.b,1/2)){const [cc,b,a]=Q,u=add(X,N(b/(2*a))),D=b*b-4*a*cc,m=-D/(4*a); // a(u²) + m
+        const base=mul(N(1/2),u,n);
+        if(a<0&&m>0){const r=Math.sqrt(-a);return add(base,mul(N(m/(2*r)),fn('arcsin',mul(N(r/Math.sqrt(m)),u))))}
+        if(a>0){const r=Math.sqrt(a);return add(base,mul(N(m/(2*r)),fn('ln',fn('abs',add(mul(N(r),u),n)))))}}
+    }
+    if(n.t==='fn'){
+      const L=lin(n.a);
+      if(L){const u=n.a,k=N(1/L[1]);let r=null;
+        switch(n.f){
+          case 'sin':r=neg(fn('cos',u));break;case 'cos':r=fn('sin',u);break;
+          case 'tan':r=neg(fn('ln',fn('abs',fn('cos',u))));break;case 'cot':r=fn('ln',fn('abs',fn('sin',u)));break;
+          case 'sec':r=fn('ln',fn('abs',add(fn('sec',u),fn('tan',u))));break;case 'csc':r=neg(fn('ln',fn('abs',add(fn('csc',u),fn('cot',u)))));break;
+          case 'sinh':r=fn('cosh',u);break;case 'cosh':r=fn('sinh',u);break;case 'tanh':r=fn('ln',fn('cosh',u));break;
+          case 'ln':r=sub(mul(u,fn('ln',u)),u);break;
+          case 'lg':r=mul(sub(mul(u,fn('ln',u)),u),inv(fn('ln',N(10))));break;case 'log2':r=mul(sub(mul(u,fn('ln',u)),u),inv(fn('ln',N(2))));break;
+          case 'arctan':r=sub(mul(u,fn('arctan',u)),mul(N(1/2),fn('ln',add(N(1),pow(u,N(2))))));break;
+          case 'arccot':r=add(mul(u,fn('arccot',u)),mul(N(1/2),fn('ln',add(N(1),pow(u,N(2))))));break;
+          case 'arcsin':r=add(mul(u,fn('arcsin',u)),pow(sub(N(1),pow(u,N(2))),N(1/2)));break;
+          case 'arccos':r=sub(mul(u,fn('arccos',u)),pow(sub(N(1),pow(u,N(2))),N(1/2)));break;
+          case 'abs':r=mul(N(1/2),u,fn('abs',u));break;
+        }
+        if(r)return mul(k,r);
+      }
+    }
+    // powers of trig functions of x
+    if(n.t==='pow'&&n.a.t==='fn'&&n.b.t==='num'&&lin(n.a.a)){const u=n.a.a,k=1/lin(u)[1],e=n.b.v,f=n.a.f;
+      if(e===2&&f==='sin')return mul(N(k),sub(mul(N(1/2),u),mul(N(1/4),fn('sin',mul(N(2),u)))));
+      if(e===2&&f==='cos')return mul(N(k),add(mul(N(1/2),u),mul(N(1/4),fn('sin',mul(N(2),u)))));
+      if(e===-2&&f==='cos')return mul(N(k),fn('tan',u));if(e===-2&&f==='sin')return mul(N(-k),fn('cot',u));
+      if(e===2&&f==='tan')return mul(N(k),sub(fn('tan',u),u));if(e===2&&f==='cot')return mul(N(-k),add(fn('cot',u),u));
+      if(e===-1&&f==='sin')return I(fn('csc',u));if(e===-1&&f==='cos')return I(fn('sec',u));
+      if(e===2&&f==='sec')return mul(N(k),fn('tan',u));
+    }
+    // substitution: f(g(x))·g′(x)
+    const fs=n.t==='mul'?n.a:[n];
+    for(const F of fs){
+      const cands=[];
+      if(F.t==='fn')cands.push([F.a,fn(F.f,X)]);
+      if(F.t==='pow'&&!hasX(F.b))cands.push([F.a,pow(X,F.b)]);
+      if(F.t==='pow'&&!hasX(F.a))cands.push([F.b,pow(F.a,X)]);
+      if(fs.length>1)cands.push([F,X]);
+      for(const [u,f] of cands){
+        if(u.t==='sym'||lin(u)&&fs.length===1)continue;
+        const rest=fs.filter(g=>g!==F),du=d(u);if(isN(du,0))continue;
+        const q=mul(...rest,inv(du));
+        if(!hasX(q)){const G=I(f);if(G)return mul(q,subst(G,u))}
+        const q2=expand(q);if(!hasX(q2)){const G=I(f);if(G)return mul(q2,subst(G,u))}
+      }
+    }
+    // by parts: polynomial × (sin, cos, exp of a linear function) and polynomial × ln
+    if(n.t==='mul'){
+      const pf=n.a.filter(f=>poly(f)),of=n.a.filter(f=>!poly(f));
+      if(pf.length&&of.length===1){
+        const Pn=mul(...pf),g=of[0];
+        const okG=g.t==='fn'&&(g.f==='sin'||g.f==='cos'||g.f==='sinh'||g.f==='cosh')&&lin(g.a)||g.t==='pow'&&!hasX(g.a)&&lin(g.b);
+        if(okG){let terms=[],D=Pn,G=g,s=1;
+          for(let k=0;k<14&&!isN(D,0);k++){G=I(G);if(!G)return null;terms.push(mul(N(s),D,G));D=d(D);s=-s}
+          return isN(D,0)?add(...terms):null}
+        if(g.t==='fn'&&(g.f==='ln'||g.f==='arctan'||g.f==='arcsin')&&lin(g.a)){
+          const Q=I(Pn);if(!Q)return null;const rest=I(expand(mul(Q,d(g))));return rest&&sub(mul(Q,g),rest)}
+      }
+      if(n.a.length===2){ // e^(ax+p)·sin/cos(bx+q)
+        const [A,B]=n.a[0].t==='fn'?[n.a[1],n.a[0]]:n.a;
+        if(A.t==='pow'&&A.a.t==='sym'&&A.a.v==='e'&&lin(A.b)&&B.t==='fn'&&(B.f==='sin'||B.f==='cos')&&lin(B.a)){
+          const a=lin(A.b)[1],b=lin(B.a)[1],k=N(1/(a*a+b*b)),v=B.a;
+          return B.f==='sin'?mul(k,A,sub(mul(N(a),fn('sin',v)),mul(N(b),fn('cos',v)))):mul(k,A,add(mul(N(a),fn('cos',v)),mul(N(b),fn('sin',v))))}
+      }
+      // product of sums → expand
+      const ex=expand(n);if(key(ex)!==key(n))return I(ex);
+    }
+    if(n.t==='pow'&&n.b.t==='num'&&Number.isInteger(n.b.v)&&n.b.v>1&&n.a.t==='add'){const ex=expand(n);if(key(ex)!==key(n))return I(ex)}
+    return null;
+  }
+  function rational(n){ // P(x)/Q(x) with deg Q ≤ 2; undefined if not of that shape
+    const fs=n.t==='mul'?n.a:[n];
+    const den=fs.filter(f=>f.t==='pow'&&f.b.t==='num'&&f.b.v<0&&Number.isInteger(f.b.v)),num=fs.filter(f=>!den.includes(f));
+    if(!den.length)return undefined;
+    const Pn=poly(num.length?mul(...num):N(1)),Qn=poly(mul(...den.map(f=>pow(f.a,N(-f.b.v)))));
+    if(!Pn||!Qn||Qn.length<2)return undefined;
+    // long division
+    let r=Pn.slice();const q=Array(Math.max(1,r.length-Qn.length+1)).fill(0);
+    for(let i=r.length-Qn.length;i>=0;i--){const c=r[i+Qn.length-1]/Qn[Qn.length-1];q[i]=c;for(let j=0;j<Qn.length;j++)r[i+j]-=c*Qn[j]}
+    r=trim(r.slice(0,Qn.length-1));
+    const parts=[];if(q.some(v=>v!==0))parts.push(I(fromPoly(q)));
+    const Qx=fromPoly(Qn);
+    if(Qn.length===2){parts.push(mul(N(r[0]/Qn[1]),fn('ln',fn('abs',Qx))))}
+    else if(Qn.length===3){
+      const [c,b,a]=Qn,m=r[1]||0,k=r[0]||0,D=b*b-4*a*c;
+      if(m)parts.push(mul(N(m/(2*a)),fn('ln',fn('abs',Qx))));
+      const rest=k-m*b/(2*a);
+      if(Math.abs(rest)>1e-15){
+        if(D<-1e-12){const s=Math.sqrt(-D);parts.push(mul(N(2*rest/s),fn('arctan',mul(N(1/s),add(mul(N(2*a),X),N(b))))))}
+        else if(D>1e-12){const s=Math.sqrt(D);parts.push(mul(N(rest/s),fn('ln',fn('abs',mul(add(X,N((b-s)/(2*a))),inv(add(X,N((b+s)/(2*a)))))))))}
+        else parts.push(mul(N(-rest/a),inv(add(X,N(b/(2*a))))));
+      }
+    }
+    else{ // higher degree: partial fractions over distinct real roots
+      const roots=realRoots(Qn);if(!roots)return null;
+      const lead=Qn[Qn.length-1];
+      for(const x0 of roots){let dq=0;for(let i=1;i<Qn.length;i++)dq+=i*Qn[i]*Math.pow(x0,i-1);let pv=0;r.forEach((v,i)=>pv+=v*Math.pow(x0,i));
+        parts.push(mul(N(pv/dq),fn('ln',fn('abs',add(X,N(-x0))))))}
+      void lead;
+    }
+    return parts.every(Boolean)?add(...parts):null;
+  }
+  function realRoots(c){ // distinct simple real roots of a polynomial, or null
+    const n=c.length-1;if(n>6)return null;
+    let z=Array.from({length:n},(_,k)=>({re:Math.cos(2*Math.PI*k/n+.4)*1.3,im:Math.sin(2*Math.PI*k/n+.4)*1.3}));
+    const a=c.map(v=>v/c[n]);
+    const ev=w=>{let re=1,im=0;for(let i=n-1;i>=0;i--){const t=re*w.re-im*w.im+a[i];im=re*w.im+im*w.re;re=t}return {re,im}};
+    for(let it=0;it<500;it++){z=z.map((w,i)=>{let num=ev(w),dr=1,di=0;z.forEach((v,j)=>{if(j!==i){const xr=w.re-v.re,xi=w.im-v.im;const t=dr*xr-di*xi;di=dr*xi+di*xr;dr=t}});const m=dr*dr+di*di;return {re:w.re-(num.re*dr+num.im*di)/m,im:w.im-(num.im*dr-num.re*di)/m}})}
+    if(z.some(w=>Math.abs(w.im)>1e-7))return null;
+    const r=z.map(w=>w.re).sort((x,y)=>x-y);for(let i=1;i<r.length;i++)if(Math.abs(r[i]-r[i-1])<1e-6)return null;
+    return r.map(v=>{const q=near(v);return q!==null&&Math.abs(v-q)<1e-9?q:v});
+  }
+  /* check F′ = f numerically */
+  function verify(Fx,f){
+    const dF=d(Fx);let ok=0;
+    for(const x of [0.37,1.21,2.53,-0.71,-1.93,0.83,3.7,-2.9]){
+      const a=evalN(dF,x),b=evalN(f,x);if(!isFinite(a)||!isFinite(b))continue;
+      if(Math.abs(a-b)>1e-6*Math.max(1,Math.abs(b)))return false;ok++;
+    }
+    return ok>=3;
+  }
+  /* printing as 2D markers for renderExpr */
+  function ratio(v){if(!isFinite(v))return null;for(let q=1;q<=1000;q++){const p=Math.round(v*q);if(Math.abs(v*q-p)<1e-9*Math.max(1,Math.abs(v*q)))return [p,q]}return null}
+  function numStr(v){const r=ratio(Math.abs(v));if(r&&r[1]>1)return '⦃'+r[0]+'⦙'+r[1]+'⦄';
+    const s=Math.abs(v);for(const [k,name] of [[Math.PI,'π'],[Math.SQRT2,'√2']]){const q=ratio(s/k);if(q&&q[1]<=12&&q[0]<=24)return (q[0]===1?'':q[0])+name+(q[1]>1?'⁄'+q[1]:'')}
+    return fmtOutPlain(s)}
+  const fmtOutPlain=v=>{const s=fmt(round15(Number(v.toPrecision(10))));return s.replace(/E(−?\d+)/,'×10⟦$1⟧').replace(/-/g,'−')};
+  const FNAME={abs:'',log2:'log₂'};
+  function P(n){ // returns marker string
+    switch(n.t){
+      case 'num':return (n.v<0?'−':'')+numStr(n.v);
+      case 'sym':return n.v;
+      case 'add':{let s='';n.a.forEach((t,i)=>{const [c]=splitCoef(t);if(c<0){s+='−'+P(neg(t))}else s+=(i?'+':'')+P(t)});return s}
+      case 'mul':case 'pow':return mulStr(n);
+      case 'fn':{if(n.f==='abs')return '|'+P(n.a)+'|';
+        if(n.f==='ln'&&n.a.t==='fn'&&n.a.f==='abs')return 'ln|'+P(n.a.a)+'|';
+        const nm=FNAME[n.f]??n.f;return nm+'('+P(n.a)+')'}
+    }
+  }
+  const atomic=n=>n.t==='sym'||n.t==='num'&&n.v>=0&&Number.isInteger(n.v)||n.t==='fn';
+  function powStr(b,e){
+    if(e.t==='num'&&e.v===1/2)return '⟨'+P(b)+'⟩';
+    if(e.t==='num'&&Math.abs(e.v-1/3)<1e-15)return '⟪3⁑'+P(b)+'⟫';
+    const r=e.t==='num'?ratio(e.v):null;
+    if(r&&r[1]>1&&r[1]<=4&&r[0]>0&&b.t!=='fn'){const inner=r[0]===1?P(b):(atomic(b)?P(b):'('+P(b)+')')+'⟦'+r[0]+'⟧';return r[1]===2?'⟨'+inner+'⟩':'⟪'+r[1]+'⁑'+inner+'⟫'}
+    const es=e.t==='num'&&r&&r[1]>1?'⦃'+r[0]+'⦙'+r[1]+'⦄':P(e);
+    if(b.t==='fn'&&b.f!=='abs'&&e.t==='num'&&e.v>0&&Number.isInteger(e.v)){const nm=FNAME[b.f]??b.f;return nm+'⟦'+es+'⟧('+P(b.a)+')'}
+    return (atomic(b)?P(b):'('+P(b)+')')+'⟦'+es+'⟧';
+  }
+  function mulStr(n){
+    const fs=n.t==='mul'?n.a:[n];let c=1;const up=[],dn=[];
+    for(const f of fs){if(f.t==='num')c*=f.v;else if(f.t==='pow'&&f.b.t==='num'&&f.b.v<0)dn.push(pow(f.a,N(-f.b.v)));else up.push(f)}
+    let cn=Math.abs(c),cd=1;const r=ratio(cn);if(r&&r[1]>1&&(up.length||dn.length)){cn=r[0];cd=r[1]}
+    const sg=c<0?'−':'';
+    const fac=f=>f.t==='add'?'('+P(f)+')':f.t==='pow'?powStr(f.a,f.b):P(f);
+    const join=(k,list)=>{let s=k===1&&list.length?'':numStr(k);list.forEach((f,i)=>{const t=fac(f);s+=(s&&(i>0||/^\d/.test(t))?'·':'')+t});return s};
+    if(!dn.length&&cd===1)return sg+join(cn,up);
+    const top=join(cn,up)||'1',bot=join(cd,dn);
+    return sg+'⦃'+top+'⦙'+bot+'⦄';
+  }
+  return {parse,d,I,verify,evalN,P,hasX,SymErr,expand,add,mul,N,X};
+})();
+/* numeric integral: adaptive Gauss–Kronrod 7/15 */
+function integrate(f,a,b){
+  const xk=[0.991455371120813,0.949107912342759,0.864864423359769,0.741531185599394,0.586087235467691,0.405845151377397,0.207784955007898,0];
+  const wk=[0.022935322010529,0.063092092629979,0.104790010322250,0.140653259715525,0.169004726639267,0.190350578064785,0.204432940075298,0.209482141084728];
+  const wg=[0.129484966168870,0.279705391489277,0.381830050505119,0.417959183673469];
+  function gk(a,b){const c=(a+b)/2,h=(b-a)/2;let k=0,g=0;
+    for(let i=0;i<8;i++){const x=xk[i]*h;const fs=i===7?[f(c)]:[f(c-x),f(c+x)];const s=fs.reduce((p,q)=>p+q,0);
+      k+=wk[i]*s;if(i%2===1)g+=wg[(i-1)/2]*s}
+    return [k*h,Math.abs((k-g)*h)]}
+  let parts=[[a,b,...gk(a,b)]],it=0;
+  const tot=()=>parts.reduce((s,p)=>[s[0]+p[2],s[1]+p[3]],[0,0]);
+  for(;it<3000;it++){const [v,e]=tot();if(!isFinite(v))throw new CalcError('domain','Интеграл расходится или функция не определена на отрезке');
+    if(e<=Math.max(1e-11,1e-11*Math.abs(v)))break;
+    let wi=0;parts.forEach((p,i)=>{if(p[3]>parts[wi][3])wi=i});const [x0,x1]=parts[wi],m=(x0+x1)/2;parts.splice(wi,1,[x0,m,...gk(x0,m)],[m,x1,...gk(m,x1)])}
+  const [v,e]=tot();return {v,err:e,ok:e<=Math.max(1e-8,1e-8*Math.abs(v))};
+}
 /*END ENGINE*/
 
 (function(){
@@ -989,7 +1432,7 @@ function insert(text){
         const unaryMinus=text==='−'&&!['+','−'].includes(last);
         if(!unaryMinus)before=before.slice(0,-last.length);
       }
-      if(/[(⦃⦙⟦⟬⟮⁅⁆⟨⟪⁑⦗⦘]$/.test(before)&&text!=='−')return;
+      if(/[(⦃⦙⟦⟬⟮⁅⁆⟨⟪⁑⦗⦘⧼⦅⦇⁏]$/.test(before)&&text!=='−')return;
     }
   }else if(text==='.'){
     const seg=/[\d.]*$/.exec(before)[0];
@@ -1050,8 +1493,8 @@ function removeIfEmpty(i){
   if(inner!==''&&!((s[i]==='⟬'||s[i]==='⟮')&&inner==='k'))return false;
   S.expr=s.slice(0,i)+s.slice(j+1);S.cur=i;render();return true;
 }
-const CLOSE_OF={'⦃':'⦄','⟦':'⟧','⟬':'⟭','⟮':'⟭','⟨':'⟩','⟪':'⟫','⦗':'⦚'};
-const BOX_START=/[(⦃⦙⟦⟬⟮⁅⁆⟨⟪⁑⦗⦘,]$/;
+const CLOSE_OF={'⦃':'⦄','⟦':'⟧','⟬':'⟭','⟮':'⟭','⟨':'⟩','⟪':'⟫','⦗':'⦚','⧼':'⧽','⦅':'⦆','⦇':'⦈'};
+const BOX_START=/[(⦃⦙⟦⟬⟮⁅⁆⟨⟪⁑⦗⦘⧼⦅⦇⁏,]$/;
 function clearAll(){S.expr='';S.cur=0;S.done=false;S.err=false;S.res='';render()}
 function negate(){
   if(S.done){if(S.err)return;beginEdit('continue')}
@@ -1060,7 +1503,7 @@ function negate(){
   else while(i>0){const ch=s[i-1];if(/[\d.Eπe]/.test(ch))i--;else if((ch==='-'||ch==='+'||ch==='−')&&s[i-2]==='E')i--;else break}
   if(i===c){insert('−');return}
   const prev=s[i-1],prev2=s[i-2];
-  if(prev==='−'&&(i-1===0||/[+−×÷^(,dPC√⦃⦙⟦⟬⟮⁅⁆⟨⟪⁑⦗⦘]/.test(prev2))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
+  if(prev==='−'&&(i-1===0||/[+−×÷^(,dPC√⦃⦙⟦⟬⟮⁅⁆⟨⟪⁑⦗⦘⧼⦅⦇⁏]/.test(prev2))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
   else if(prev==='−'){S.expr=s.slice(0,i-1)+'+'+s.slice(i)}
   else if(prev==='+'){S.expr=s.slice(0,i-1)+'−'+s.slice(i)}
   else{S.expr=s.slice(0,i)+'−'+s.slice(i);S.cur=c+1}
@@ -1118,7 +1561,7 @@ function fracKey(){
 function boxKey(open,mid,tip,tipKey){ // inserts an empty box structure, caret in its first box
   if(S.done)beginEdit('fresh');
   const c=S.cur;let pre='';
-  if(/[\dπe)²³!%iΩ⟧⦄⟩⟫⦚⟭kx]$/.test(S.expr.slice(0,c))&&open!=='⟪')pre='×';
+  if(/[\dπe)²³!%iΩ⟧⦄⟩⟫⦚⟭⧽⦆⦈kx]$/.test(S.expr.slice(0,c))&&open!=='⟪')pre='×';
   if(tip&&!S[tipKey]){S[tipKey]=true;setTimeout(()=>snack(tip),150)}
   S.expr=S.expr.slice(0,c)+pre+open+mid+CLOSE_OF[open]+S.expr.slice(c);S.cur=c+pre.length+1;render();
 }
@@ -1128,6 +1571,13 @@ function nrootKey(){
   const s=S.expr,c=S.cur,m=/(\d+)$/.exec(s.slice(0,c)); // a number right before becomes the degree
   if(m){const st=c-m[0].length;S.expr=s.slice(0,st)+'⟪'+m[0]+'⁑⟫'+s.slice(c);S.cur=st+m[0].length+2;render();return}
   boxKey('⟪','⁑','Маленькое поле — степень корня, потом › и число под корнем','nrootTip');
+}
+function cmbKey(open){ // Cₙᵏ, Aₙᵏ, Pₙ as in a notebook: n below, k above
+  if(S.done)beginEdit(S.err?'fresh':'continue');
+  const s=S.expr,c=S.cur,mid=open==='⦇'?'':'⁏',m=/(\d+)$/.exec(s.slice(0,c)); // a number right before becomes n
+  if(!S.cmbTip){S.cmbTip=true;setTimeout(()=>snack(open==='⦇'?'Внизу — n':m?'Вверху — k':'Внизу n, потом › и вверху k'),150)}
+  if(m){const st=c-m[0].length;S.expr=s.slice(0,st)+open+m[0]+mid+CLOSE_OF[open]+s.slice(c);S.cur=st+m[0].length+1+(mid?1:0);render();return}
+  boxKey(open,mid);
 }
 function logKey(){boxKey('⦗','⦘','Сначала основание внизу, потом › и число','logTip')}
 function bigKey(op){ // Σ / ∏ with «от» below and «до» above
@@ -1193,10 +1643,9 @@ const trig=(n,ru,ruInv)=>({k:n,c:'sci',
   a:()=>S.inv?ruInv:ru,
   ins:()=>S.inv?INV_NAME[n]+'(':n+'('});
 const SCI=[
-  {k:'inv',l:'Обр',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
-  trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
-  trig('cot','Котангенс = cos ÷ sin','Арккотангенс — угол по котангенсу'),
-  {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
+  {k:'inv',r5:1,l:'Обр',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
+  {...trig('sin','Синус','Арксинус — угол по синусу'),r5:1},{...trig('cos','Косинус','Арккосинус — угол по косинусу'),r5:1},{...trig('tan','Тангенс','Арктангенс — угол по тангенсу'),r5:1},
+  {...trig('cot','Котангенс = cos ÷ sin','Арккотангенс — угол по котангенсу'),r5:1},
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
   {k:'log',l:'lg',a:'Десятичный логарифм (по основанию 10): lg(100) = 2',c:'sci',ins:'lg('},
   {k:'e',l:'e<small class="alt">π</small>',a:'Число e ≈ 2.71828. Удерживайте — число π',c:'sci',ins:'e',long:()=>insert('π')},
@@ -1237,8 +1686,9 @@ const MORE=[
   {k:'°',l:'°',a:'Градусы, даже в режиме радиан: sin(30°) = 0.5',ins:'°'},
   {k:'НОД',l:'НОД',a:'Наибольший общий делитель: НОД(12,18) = 6',ins:'НОД('},
   {k:'НОК',l:'НОК',a:'Наименьшее общее кратное: НОК(4,6) = 12',ins:'НОК('},
-  {k:'nCr',l:'Сочетания',a:'Сколькими способами выбрать r из n, порядок не важен: 5C2 = 10',ins:'C'},
-  {k:'nPr',l:'Перестановки',a:'То же, но порядок важен: 5P2 = 20',ins:'P'},
+  {k:'nCr',l:'Сочетания C<sub>n</sub><sup>k</sup>',a:'Сколькими способами выбрать k из n, порядок не важен: C₅² = 10. Внизу n, вверху k',run:()=>cmbKey('⧼')},
+  {k:'nPr',l:'Размещения A<sub>n</sub><sup>k</sup>',a:'То же, но порядок важен: A₅² = 20. Внизу n, вверху k',run:()=>cmbKey('⦅')},
+  {k:'Pn',l:'Перестановки P<sub>n</sub>',a:'Сколькими способами переставить n предметов: P₅ = 5! = 120',run:()=>cmbKey('⦇')},
   {k:'floor',l:'Вниз',a:'Округлить вниз: вниз(2.7) = 2',ins:'вниз('},
   {k:'ceil',l:'Вверх',a:'Округлить вверх: вверх(2.1) = 3',ins:'вверх('},
   {k:'round',l:'Округлить',a:'Округлить до целого: округл(2.5) = 3',ins:'округл('},
@@ -1251,7 +1701,7 @@ const keyEls={};
 function build(defs,host){
   for(const d of defs){
     const b=document.createElement('button');
-    b.type='button';b.className='key '+d.c;b.dataset.k=d.k;if(d.span)b.style.gridColumn='span '+d.span;
+    b.type='button';b.className='key '+d.c;b.dataset.k=d.k;if(d.span)b.style.gridColumn='span '+(host.classList.contains('sci')?d.span*5:d.span);if(d.r5)b.classList.add('r5');
     b.addEventListener('click',()=>{if(b._hinted){b._hinted=false;return}press(d)});
     if(d.long){ // long press does the alternative action
       let t=null;
@@ -1281,7 +1731,7 @@ build(SCI,sciEl);build(BASE,baseEl);build(MEM,$('memRow'));
 function renderMore(){
   const list=$('moreList');list.innerHTML='';
   for(const d of MORE){
-    const b=document.createElement('button');b.type='button';b.className='more-item';
+    const b=document.createElement('button');b.type='button';b.className='more-item';b.dataset.k=d.k;
     b.innerHTML='<span class="more-key">'+val(d.l)+'</span><span class="more-desc"></span>';
     const da=val(d.a);b.lastChild.textContent=da;b.setAttribute('aria-label',da);
     b.addEventListener('click',()=>{setMore(false);press(d)});
@@ -1335,6 +1785,8 @@ function renderExpr(s,caret){
     else if(ch==='⁅'){h+=`</span><span class="bup" data-pos="${i+1}">`}
     else if(ch==='⁆'){h+=`</span></span><span class="bbody" data-pos="${i+1}">`;st[st.length-1]='</span></span>'}
     else if(ch==='⟦'){h+=`<span class="sup" data-pos="${i+1}">`;st.push('</span>')}
+    else if(ch==='⧼'||ch==='⦅'||ch==='⦇'){h+=`<span class="cmb"><span class="csym">${ch==='⧼'?'C':ch==='⦅'?'A':'P'}</span><span class="cst"><span class="clo" data-pos="${i+1}">`;st.push('</span></span></span>')}
+    else if(ch==='⁏'){h+=`</span><span class="cup" data-pos="${i+1}">`}
     else h+=`<span class="ch" data-i="${i}">${esc(ch)}</span>`;
   }
   if(caret===s.length)h+=CAR;
@@ -1343,7 +1795,7 @@ function renderExpr(s,caret){
 }
 const plainExpr=s=>{try{s=normStruct(s)}catch(e){}return s.replace(/⁄/g,'/')};
 const fracHTML=t=>{const m=/^(−?)(\d+)⁄(\d+)$/.exec(t);return m?m[1]+`<span class="frac"><span class="num">${m[2]}</span><span class="den">${m[3]}</span></span>`:null};
-const measureText=s=>s.replace(/⦃([^⦃⦄]*)⦙?([^⦃⦄]*)⦄?/g,(m,a,b)=>'0'.repeat(Math.ceil(Math.max(a.length,b.length,1)*0.6)+1)).replace(/[⟬⟮]/g,'Σ0').replace(/[⟨⟪]/g,'√').replace(/⦗/g,'log').replace(/[⁅⁆⟭⟦⟧⟩⟫⁑⦘⦚]/g,'');
+const measureText=s=>s.replace(/⦃([^⦃⦄]*)⦙?([^⦃⦄]*)⦄?/g,(m,a,b)=>'0'.repeat(Math.ceil(Math.max(a.length,b.length,1)*0.6)+1)).replace(/[⟬⟮]/g,'Σ0').replace(/[⟨⟪]/g,'√').replace(/⦗/g,'log').replace(/[⧼⦅⦇]/g,'C').replace(/[⁅⁆⟭⟦⟧⟩⟫⁑⦘⦚⧽⦆⦈⁏]/g,'');
 let lastShown='';
 function render(){
   if(S.fieldMode){drawField(S.fieldMode.el,S.expr,S.cur,true);return}
@@ -1373,7 +1825,7 @@ function render(){
 
 /* caret editing in the middle */
 exprEl.addEventListener('click',e=>{
-  const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody,.rbody,.ridx,.lsub,.larg');
+  const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody,.rbody,.ridx,.lsub,.larg,.clo,.cup');
   let pos=S.expr.length;
   if(ch){const i=+ch.dataset.i,r=ch.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?i+1:i}
   else if(slot)pos=+slot.dataset.pos;
@@ -1600,7 +2052,8 @@ function makeField(el,expr,onChange,onEnter){
   const f={el,expr:expr||'',cur:(expr||'').length,onChange,onEnter};el._mf=f;el.dataset.label=el.getAttribute('aria-label')||'Формула';
   drawField(el,f.expr,f.cur,false);
   el.addEventListener('click',e=>{
-    const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody,.rbody,.ridx,.lsub,.larg');
+    e.stopPropagation(); // the redraw below detaches e.target, so the outside-click check must not see this tap
+    const ch=e.target.closest('.ch'),slot=e.target.closest('.num,.den,.sup,.blo,.bup,.bbody,.rbody,.ridx,.lsub,.larg,.clo,.cup');
     let pos=f.expr.length;
     if(ch){const i=+ch.dataset.i,r=ch.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?i+1:i}else if(slot)pos=+slot.dataset.pos;
     if(PAD.f!==f)pos=f.expr.length; // first tap: caret at the end
@@ -1673,7 +2126,7 @@ function closePad(){
 }
 // tapping outside a field and the keypad closes it
 // closed on click (not on touch start), so the tapped button gets its click before the layout moves
-document.addEventListener('click',e=>{if(PAD.f&&!e.target.closest('#fpad,.mfield,.field.active,#gCanvas,.g-tools,.tab'))closePad()});
+document.addEventListener('click',e=>{if(PAD.f&&!e.composedPath().some(n=>n.matches&&n.matches('#fpad,.mfield,.field.active,#gCanvas,.g-tools,.tab')))closePad()});
 
 /* ================= graphs ================= */
 const GKEY='eng-calc-graph';
@@ -1851,8 +2304,9 @@ const segSolve=$('segSolve');
 segSolve.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
   solveMode=b.dataset.v;segSolve.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   $('solveEq').hidden=solveMode!=='eq';$('solveQuad').hidden=solveMode!=='quad';$('solveSys').hidden=solveMode!=='sys';$('solveMat').hidden=solveMode!=='mat';
+  $('solveInt').hidden=solveMode!=='int';$('solveDer').hidden=solveMode!=='der';
   closePad();if(solveMode==='sys'&&!sysFields.length)buildSys(sysN);if(solveMode==='mat'&&!matFields.length)buildMat();
-  $('solveOut').hidden=true;
+  $('solveOut').hidden=true;$('solveScreen').scrollTo({top:0});
 }));
 const eqField=makeField($('eqIn'),'',()=>{},()=>solve());
 function chainNext(list){list.forEach((f,i)=>{f.onEnter=()=>{if(i<list.length-1)openPad(list[i+1]);else solve()}})}
@@ -1900,8 +2354,52 @@ function buildMat(){
     let v=r<oR&&c<oC?old[r*oC+c]:(oR?'0':fmt(MAT_DEF[r]?.[c]??0));
     g.appendChild(f);matFields.push(makeField(f.querySelector('.mfield'),v,null,null));
   }
-  buildMat.r=matR;buildMat.c=matC;chainNext(matFields);
+  buildMat.r=matR;buildMat.c=matC;matChain();
 }
+/* second matrix B, number k / n */
+let matBFields=[],matBR=3,matBC=3;
+const MATB_DEF=[[1,0,2],[0,1,1],[3,1,0]];
+function buildMatB(){
+  const old=matBFields.map(f=>f.expr),oR=buildMatB.r||0,oC=buildMatB.c||0;
+  $('matBR').textContent=matBR;$('matBC').textContent=matBC;
+  $('matBRm').disabled=matBR<=1;$('matBRp').disabled=matBR>=6;$('matBCm').disabled=matBC<=1;$('matBCp').disabled=matBC>=6;
+  matBFields=[];const g=$('matGridB');g.innerHTML='';g.style.gridTemplateColumns=`repeat(${matBC},minmax(0,1fr))`;
+  for(let r=0;r<matBR;r++)for(let c=0;c<matBC;c++){
+    const f=document.createElement('div');f.className='field';
+    f.innerHTML=`<div class="mfield boxes" role="textbox" tabindex="0" aria-label="B: элемент ${r+1}, ${c+1}"></div>`;
+    let v=r<oR&&c<oC?old[r*oC+c]:(oR?'0':fmt(MATB_DEF[r]?.[c]??0));
+    g.appendChild(f);matBFields.push(makeField(f.querySelector('.mfield'),v,null,null));
+  }
+  buildMatB.r=matBR;buildMatB.c=matBC;matChain();
+}
+const matKField=makeField($('matK'),'2',null,()=>solve());
+const MAT_NEEDS_B=new Set(['add','sub','mul','bmul','solve']);
+function matChain(){
+  const op=$('matOp').value,list=[...matFields];
+  if(MAT_NEEDS_B.has(op))list.push(...matBFields);else if(op==='k'||op==='pow')list.push(matKField);
+  chainNext(list);
+}
+function matOpChanged(){
+  const op=$('matOp').value;closePad();
+  $('matBBox').hidden=!MAT_NEEDS_B.has(op);$('matKBox').hidden=!(op==='k'||op==='pow');
+  $('matKLabel').textContent=op==='pow'?'Степень n (целое)':'Число k';
+  if(MAT_NEEDS_B.has(op)&&!matBFields.length){if(op==='solve'){matBR=matR;matBC=1}buildMatB()}
+  matChain();$('solveOut').hidden=true;
+}
+$('matOp').addEventListener('change',matOpChanged);
+$('matBRm').addEventListener('click',()=>{closePad();if(matBR>1){matBR--;buildMatB()}});
+$('matBRp').addEventListener('click',()=>{closePad();if(matBR<6){matBR++;buildMatB()}});
+$('matBCm').addEventListener('click',()=>{closePad();if(matBC>1){matBC--;buildMatB()}});
+$('matBCp').addEventListener('click',()=>{closePad();if(matBC<6){matBC++;buildMatB()}});
+/* calculus fields */
+const intF=makeField($('intF'),'x·sin(x)'.replace('·','×'),null,null),intA=makeField($('intA'),'0',null,null),intB=makeField($('intB'),'π',null,null);
+chainNext([intF,intA,intB]);
+const derF=makeField($('derF'),'x²×e^(x)'.replace('^(x)','⟦x⟧'),null,null),derX=makeField($('derX'),'',null,null);
+chainNext([derF,derX]);
+let derN=1;
+const setDerN=n=>{derN=n;$('derN').textContent=n;$('derMinus').disabled=n<=1;$('derPlus').disabled=n>=5;$('solveOut').hidden=true};
+$('derMinus').addEventListener('click',()=>{closePad();if(derN>1)setDerN(derN-1)});
+$('derPlus').addEventListener('click',()=>{closePad();if(derN<5)setDerN(derN+1)});setDerN(1);
 $('matRm').addEventListener('click',()=>{closePad();if(matR>1){matR--;buildMat()}});
 $('matRp').addEventListener('click',()=>{closePad();if(matR<6){matR++;buildMat()}});
 $('matCm').addEventListener('click',()=>{closePad();if(matC>1){matC--;buildMat()}});
@@ -2049,12 +2547,15 @@ function solve(){
       return;
     }
     closePad();
+    if(solveMode==='int'){solveIntegral();return}
+    if(solveMode==='der'){solveDerivative();return}
     if(solveMode==='mat'){
       const R=matR,C=matC,A=[];
-      for(let r=0;r<R;r++)A.push(matFields.slice(r*C,(r+1)*C).map((f,c)=>num(f.expr,'строка '+(r+1)+', столбец '+(c+1))));
+      for(let r=0;r<R;r++)A.push(matFields.slice(r*C,(r+1)*C).map((f,c)=>num(f.expr,'A: строка '+(r+1)+', столбец '+(c+1))));
+      const op=$('matOp').value;if(op!=='props'){matOps(op,A);return}
       const items=[];const {M:E,piv}=rref(A);
       if(R===C){
-        const d=round15(det(A));
+        const d=round15(+det(A).toPrecision(12));
         items.push(row([ansBtn('det A =',d)]));
         items.push(mres('<b>Ранг</b> = '+piv.length+'&nbsp;&nbsp;&nbsp;<b>След</b> = '+nv(A.reduce((s,r,i)=>s+r[i],0))));
         const inv=d!==0?inverse(A):null;
@@ -2084,6 +2585,98 @@ function solve(){
   }catch(e){showOut([errBox(e.message||'Не получилось решить')])}
 }
 $('solveBtn').addEventListener('click',solve);
+/* matrix operations */
+const mmul=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+function matOps(op,A){
+  const items=[];let res=null,title='';
+  const readB=()=>{const B=[];for(let r=0;r<matBR;r++)B.push(matBFields.slice(r*matBC,(r+1)*matBC).map((f,c)=>num(f.expr,'B: строка '+(r+1)+', столбец '+(c+1))));return B};
+  const sz=M=>M.length+'×'+M[0].length;
+  if(op==='add'||op==='sub'){const B=readB();if(sz(A)!==sz(B))throw new Error('Складывать и вычитать можно только матрицы одного размера: A '+sz(A)+', B '+sz(B));
+    res=A.map((r,i)=>r.map((v,j)=>op==='add'?v+B[i][j]:v-B[i][j]));title=op==='add'?'A + B':'A − B'}
+  else if(op==='mul'||op==='bmul'){const B=readB(),[L,Rm]=op==='mul'?[A,B]:[B,A];
+    if(L[0].length!==Rm.length)throw new Error('Умножать можно, когда столбцов у первой матрицы столько же, сколько строк у второй: '+sz(L)+' и '+sz(Rm));
+    res=mmul(L,Rm);title=op==='mul'?'A · B':'B · A'}
+  else if(op==='solve'){const B=readB();
+    if(A.length!==A[0].length)throw new Error('Для A · X = B матрица A должна быть квадратной');
+    if(B.length!==A.length)throw new Error('У B должно быть столько же строк, сколько у A ('+A.length+')');
+    const d=det(A);if(Math.abs(d)<1e-12)throw new Error('det A = 0, поэтому единственного решения нет');
+    res=mmul(inverse(A),B);title='X = A⁻¹ · B'}
+  else if(op==='k'){const k=num(matKField.expr,'k');res=A.map(r=>r.map(v=>k*v));title=nv(k)+' · A'}
+  else if(op==='pow'){let n=num(matKField.expr,'n');
+    if(!Number.isInteger(n))throw new Error('Степень должна быть целым числом');
+    if(A.length!==A[0].length)throw new Error('Возводить в степень можно только квадратную матрицу');
+    if(Math.abs(n)>1000)throw new Error('Слишком большая степень');
+    let base=A;if(n<0){if(Math.abs(det(A))<1e-12)throw new Error('det A = 0, обратной матрицы нет, поэтому отрицательная степень не существует');base=inverse(A)}
+    let r=A.map((row,i)=>row.map((_,j)=>i===j?1:0)),m=Math.abs(n);while(m){if(m&1)r=mmul(r,base);base=mmul(base,base);m>>=1}
+    res=r;title='A'+(n<0?'⁻':'')+supN(Math.abs(n))}
+  res=res.map(r=>r.map(v=>round15(Math.abs(v)<1e-12?0:v)));
+  items.push(mres('<b>'+title+'</b> ('+sz(res)+')',matEl(res)));
+  if(res.length===res[0].length&&res.length>1)items.push(row([ansBtn('det =',round15(+det(res).toPrecision(12)))]));
+  else if(res.length===1&&res[0].length===1)items.push(row([ansBtn('=',res[0][0])]));
+  const b=document.createElement('button');b.type='button';b.className='btn tonal';b.textContent='Сделать результат матрицей A';
+  b.addEventListener('click',()=>{matR=res.length;matC=res[0].length;buildMat.r=0;matFields=[];buildMat();
+    matFields.forEach((f,i)=>{f.expr=fmt(res[Math.floor(i/matC)][i%matC]);f.cur=f.expr.length;drawField(f.el,f.expr,f.cur,false)});
+    $('solveOut').hidden=true;$('solveScreen').scrollTo({top:0,behavior:'smooth'});snack('Результат теперь в матрице A')});
+  items.push(row([b]));
+  showOut(items);
+}
+/* calculus */
+const mx=html=>{const d=document.createElement('div');d.className='mx';d.innerHTML=html;return d};
+const mexp=s=>'<span class="ln">'+renderExpr(s,-1)+'</span>';
+const PRIMES=['','′','″','‴','⁗','⁽⁵⁾'];
+function calcFn(field,what){
+  const src=prepFormula(field.expr);if(!src)throw new Error('Напишите '+what);
+  if(src.includes('='))throw new Error('Здесь нужна функция без знака «=»');
+  const f=x=>{try{const v=evaluate(src,{angle:'rad',ans:S.ans,x});return isC(v)?NaN:v}catch(e){return NaN}};
+  try{evaluate(src,{angle:'rad',ans:S.ans,x:0.7351})}catch(e){if(e.kind==='syntax')throw new Error('Ошибка в функции: '+e.message)}
+  let ast=null,why='';try{ast=SYM.parse(src)}catch(e){why=e.message}
+  return {src,f,ast,why};
+}
+function limitVal(field,label){
+  const t=prepFormula(field.expr);if(!t)return null;
+  try{const v=evaluate(t,{angle:'rad',ans:S.ans});if(isC(v))throw 0;return v}catch(e){throw new Error('Не понял '+label)}
+}
+function solveIntegral(){
+  const {src,f,ast}=calcFn(intF,'функцию под интегралом');
+  const a=limitVal(intA,'нижний предел'),b=limitVal(intB,'верхний предел');
+  if((a===null)!==(b===null))throw new Error('Заполните оба предела или оставьте оба пустыми');
+  let F=null;if(ast){try{F=SYM.I(ast);if(F&&!SYM.verify(F,ast))F=null}catch(e){F=null}}
+  const items=[];
+  const body='<span class="int">∫</span>'+mexp(ast&&ast.t==='add'?'('+intF.expr+')':intF.expr)+'<span>dx</span>';
+  if(F)items.push(mx(body+'<span>=</span>'+mexp(SYM.P(F))+'<span>+ C</span>'));
+  else items.push(ast?'Первообразную в элементарных функциях не нашёл.':'Эту функцию я умею интегрировать только численно.');
+  if(a!==null){
+    const r=integrate(f,a,b);
+    if(!r.ok&&!isFinite(r.v))throw new Error('Интеграл не сходится или функция не определена на отрезке');
+    let nl='';
+    if(F){const Fa=SYM.evalN(F,a),Fb=SYM.evalN(F,b);if(isFinite(Fa)&&isFinite(Fb)&&Math.abs(Fb-Fa-r.v)<1e-7*Math.max(1,Math.abs(r.v)))nl=' = F('+fmtLim(b)+') − F('+fmtLim(a)+')'}
+    items.push(mres('<b>Определённый интеграл</b> от '+fmtLim(a)+' до '+fmtLim(b)+nl,row([ansBtn('∫ =',round15(+r.v.toPrecision(12)))])));
+    if(!r.ok)items.push('Точность может быть ниже обычной: функция ведёт себя резко на этом отрезке.');
+  }
+  showOut(items);
+}
+const fmtLim=v=>{const q=v/Math.PI;for(const d of [1,2,3,4,6]){const n=Math.round(q*d);if(n&&Math.abs(q*d-n)<1e-12)return (n<0?'−':'')+(Math.abs(n)===1?'':Math.abs(n))+'π'+(d>1?'/'+d:'')}return out(round15(v),false)};
+function numDeriv(f,x,n){ // central differences with Richardson extrapolation
+  const D=(h)=>{let s=0;for(let k=0;k<=n;k++)s+=(k%2?-1:1)*binom(n,k)*f(x+(n/2-k)*h);return s/Math.pow(h,n)};
+  const h=Math.pow(1e-3,1/Math.max(1,n/2))*Math.max(1,Math.abs(x))*(n>2?4:1);
+  return (4*D(h/2)-D(h))/3;
+}
+const binom=(n,k)=>{let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return r};
+function solveDerivative(){
+  const {src,f,ast,why}=calcFn(derF,'функцию');
+  const x0=limitVal(derX,'точку x₀'),n=derN,items=[];
+  let D=null;if(ast){try{D=ast;for(let i=0;i<n;i++)D=SYM.d(D)}catch(e){D=null}}
+  const name='f'+PRIMES[n]+'(x)';
+  if(D)items.push(mx('<span>'+name+' =</span>'+mexp(SYM.P(D))));
+  else if(x0===null)throw new Error((why?why+'. ':'')+'Формулу производной не получил — укажите точку x₀, посчитаю численно');
+  else items.push('Формулу не получил, считаю численно.');
+  if(x0!==null){
+    let v=D?SYM.evalN(D,x0):NaN;
+    if(!isFinite(v)){v=numDeriv(f,x0,n);if(!isFinite(v))throw new Error('В этой точке производной нет');v=+v.toPrecision(n>2?7:10)}
+    items.push(row([ansBtn('f'+PRIMES[n]+'('+out(round15(x0),false)+') =',round15(v))]));
+  }
+  showOut(items);
+}
 
 /* ================= photo of a problem (Android app only: on-device text recognition) ================= */
 if(window.AndroidBridge&&window.AndroidBridge.scanPhoto){
