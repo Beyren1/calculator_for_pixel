@@ -103,7 +103,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 
 /* Keypads: all functions on one screen */
 .pads{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;overscroll-behavior:contain}
-.sci{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
+.sci{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:minmax(42px,1fr);gap:6px;flex:1 1 auto}
 .base{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,minmax(50px,1fr));gap:var(--gap);flex:1.25 1 auto}
 .key{position:relative;overflow:hidden;border:0;border-radius:999px;font:inherit;display:flex;align-items:center;justify-content:center;
   min-width:0;min-height:38px;padding:0 2px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;white-space:nowrap;
@@ -114,6 +114,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .key.op{background:var(--op);color:var(--on-op);font-size:clamp(24px,3.4vh,34px)}
 .key.eq{background:var(--eq);color:var(--on-eq);font-size:clamp(26px,3.6vh,36px)}
 .key.util{background:var(--util);color:var(--on-util);font-size:clamp(20px,2.8vh,26px);font-weight:500}
+.sci>.key{grid-column:span 2}
 .key.sci{background:var(--sci);color:var(--on-sci);font-size:16px;border-radius:14px}
 .key.sci:active,.key.sci.pressed{border-radius:999px}
 .key.sci[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle);font-weight:500}
@@ -350,7 +351,7 @@ const ERR={syntax:'Ошибка в выражении',div0:'Деление на
 class CalcError extends Error{constructor(kind,msg){super(msg||ERR[kind]);this.kind=kind}}
 // Longer names first: the tokenizer takes the first match.
 const FN_WORDS=['arsinh','arcosh','artanh','arcsin','arccos','arctan','arccot','sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sec⁻¹','csc⁻¹','cot⁻¹',
-  'sinh','cosh','tanh','sin','cos','tan','sec','csc','cot','logₓ','log₂','log','lg','ln','abs','floor','ceil','round','sgn','модуль','вниз','вверх','округл','знак','НОД','НОК','√','∛'];
+  'sinh','cosh','tanh','sin','cos','tan','sec','csc','cot','logₓ','log₂','log','lg','ln','abs','floor','ceil','round','sgn','модуль','вниз','вверх','округл','знак','НОД','НОК','Σ','∏','√','∛'];
 const TWO_ARG=new Set(['logₓ','НОД','НОК']);
 const NUM_RE=/^(\d+\.?\d*|\.\d+)(E[+\-−]?\d+)?/;
 
@@ -377,6 +378,7 @@ function tokenize(s){
     if(s.startsWith('⁻¹',i)){out.push({t:'post',v:'inv'});i+=2;continue}
     switch(ch){
       case 'π':case 'e':out.push({t:'const',v:ch});break;
+      case 'k':out.push({t:'var'});break;
       case '²':case '³':case '!':case '%':case '°':out.push({t:'post',v:ch});break;
       case '+':out.push({t:'op',v:'+'});break;
       case '-':case '−':out.push({t:'op',v:'-'});break;
@@ -443,7 +445,8 @@ function evaluate(src,ctx){
   const toks=tokenize(src);let p=0,pct=false;
   const peek=()=>toks[p],next=()=>toks[p++];
   const isOp=(t,v)=>!!t&&t.t==='op'&&t.v===v;
-  const startsPrimary=t=>!!t&&(t.t==='num'||t.t==='const'||t.t==='fn'||t.t==='(');
+  const startsPrimary=t=>!!t&&(t.t==='num'||t.t==='const'||t.t==='var'||t.t==='fn'||t.t==='(');
+  let kv=null; // value of k inside Σ / ∏
   const toRad=x=>A==='deg'?x*Math.PI/180:A==='grad'?x*Math.PI/200:x;
   const fromRad=x=>A==='deg'?x*180/Math.PI:A==='grad'?x*200/Math.PI:x;
   const asDeg=x=>A==='deg'?x:A==='grad'?x*9/10:null; // exact table values for DEG and GRAD
@@ -554,7 +557,20 @@ function evaluate(src,ctx){
     const t=next();if(!t)throw new CalcError('syntax');
     if(t.t==='num')return t.v;
     if(t.t==='const')return t.v==='π'?Math.PI:t.v==='e'?Math.E:(ctx.ans||0);
+    if(t.t==='var'){if(kv===null)throw new CalcError('syntax','k можно писать только внутри Σ или ∏');return kv}
     if(t.t==='('){const v=expr();closeParen();return v}
+    if(t.t==='fn'&&(t.v==='Σ'||t.v==='∏')){ // Σ(выражение с k, от, до)
+      if(!peek()||peek().t!=='(')throw new CalcError('syntax');next();
+      const p0=p;let d=0,c=-1;
+      for(let i=p;i<toks.length;i++){const q=toks[i].t;if(q==='(')d++;else if(q===')'){if(--d<0)break}else if(q===','&&d===0){c=i;break}}
+      if(c<0)throw new CalcError('syntax','Нужно так: Σ(выражение с k, от, до)');
+      p=c+1;const a=expr();if(!peek()||peek().t!==',')throw new CalcError('syntax','Нужно так: Σ(выражение с k, от, до)');next();const b=expr();closeParen();const pe=p;
+      if(!Number.isInteger(a)||!Number.isInteger(b))throw new CalcError('domain','Границы суммы должны быть целыми');
+      if(b-a>1e6)throw new CalcError('overflow','Слишком много слагаемых');
+      const sum=t.v==='Σ',old=kv;let acc=sum?0:1;
+      for(let k=a;k<=b;k++){kv=k;p=p0;const v=expr();if(p!==c)throw new CalcError('syntax');acc=chk(sum?acc+v:acc*v)}
+      kv=old;p=pe;pct=false;return acc;
+    }
     if(t.t==='fn'){
       if(peek()&&peek().t==='('){
         next();const args=[expr()];
@@ -602,6 +618,8 @@ function fmtOut(v,o){
   s=s.replace(/^-/,'−');
   if(/^−0(\.0*)?$/.test(s))s=s.slice(1);
   if(o.group)s=s.replace(/^(−?)(\d+)/,(_,sg,int)=>sg+int.replace(/\B(?=(\d{3})+(?!\d))/g,' '));
+  // 1.5E20 → 1.5×10²⁰
+  s=s.replace(/E([+\-−]?)(\d+)$/,(_,sg,d)=>'×10'+(sg&&sg!=='+'?'⁻':'')+[...d].map(c=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join(''));
   return s;
 }
 // Simple fraction for v via continued fractions; null if none with a small denominator.
@@ -650,11 +668,12 @@ const BIN=['+','−','×','÷','^','mod','ост','ⁿ√','P','C','⁄'];
 const CONT=new Set([...BIN,'²','³','!','%','°','⁻¹',')']);
 const DEL_TOKENS=[...FN_WORDS.filter(f=>f!=='√'&&f!=='∛').map(f=>f+'('),'ⁿ√','⁻¹','Ans','Отв','mod','ост'].sort((a,b)=>b.length-a.length);
 
+const powExpr=t=>t.replace(/E([+\-−]?)(\d+)$/,(_,sg,d)=>'×10⟦'+(sg&&sg!=='+'?'−':'')+d+'⟧');
 function beginEdit(kind){
   if(!S.done)return;
   const wasErr=S.err;S.done=false;S.err=false;
   if(kind==='fresh'||(kind==='continue'&&wasErr))S.expr='';
-  else if(kind==='continue')S.expr=S.res;
+  else if(kind==='continue')S.expr=powExpr(S.res);
   S.cur=S.expr.length;
 }
 function insert(text){
@@ -680,7 +699,7 @@ function insert(text){
   render();
 }
 function insertValue(v){
-  let s=fmt(v);
+  let s=powExpr(fmt(v));
   beginEdit('fresh');
   const before=S.expr.slice(0,S.cur);
   if(s.startsWith('−')&&before!==''&&!/[(]$/.test(before))s='('+s+')';
@@ -850,9 +869,6 @@ const SCI=[
   trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
   trig('cot','Котангенс = cos ÷ sin','Арккотангенс — угол по котангенсу'),
   {k:'π',l:'π',a:'Число пи ≈ 3.14159',c:'sci',ins:'π'},
-  trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
-  trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
-  trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
   {k:'ln',l:'ln',a:'Натуральный логарифм (по основанию e)',c:'sci',ins:'ln('},
   {k:'log',l:'lg',a:'Десятичный логарифм (по основанию 10): lg(100) = 2',c:'sci',ins:'lg('},
   {k:'e',l:'e',a:'Число e ≈ 2.71828',c:'sci',ins:'e'},
@@ -864,10 +880,11 @@ const SCI=[
   {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',run:()=>insertPow('10')},
   {k:'logxy',l:'log<sub>a</sub>b',a:'Логарифм с любым основанием: logₓ(основание, число), например logₓ(2,8) = 3',c:'sci',ins:'logₓ('},
   {k:'n!',l:'n!',a:'Факториал: 5! = 1·2·3·4·5 = 120',c:'sci',ins:'!'},
-  {k:'(',l:'(',a:'Открыть скобку',c:'sci',ins:'('},
-  {k:')',l:')',a:'Закрыть скобку',c:'sci',ins:')'},
-  {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: введите числитель, кнопкой › перейдите в знаменатель, ещё раз › — выйти. Дробь можно вставить внутрь другой дроби',c:'sci',run:fracKey},
-  {k:'SD',l:'<span style="font-size:11.5px;line-height:1.15;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
+  {k:'|x|',l:'|x|',a:'Модуль — число без знака: |−3| = 3',c:'sci',ins:'модуль('},
+  {k:'(',span:3,l:'(',a:'Открыть скобку',c:'sci',ins:'('},
+  {k:')',span:3,l:')',a:'Закрыть скобку',c:'sci',ins:')'},
+  {k:'frac',span:3,l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: введите числитель, кнопкой › перейдите в знаменатель, ещё раз › — выйти. Дробь можно вставить внутрь другой дроби',c:'sci',run:fracKey},
+  {k:'SD',span:3,l:'<span style="font-size:11.5px;line-height:1.15;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
 ];
 const MEM=[
   {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();if(S.moreOpen)renderMore();snack('Память очищена')}},
@@ -877,7 +894,12 @@ const MEM=[
   {k:'Ans',l:'Отв',a:'Ответ — результат прошлого вычисления',c:'sci',run:()=>{if(S.moreOpen)setMore(false);insert('Отв')}},
 ];
 const MORE=[
-  {k:'|x|',l:'|x|',a:'Модуль — число без знака: |−3| = 3',ins:'модуль('},
+  trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
+  trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
+  trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
+  {k:'Σ',l:'Σ',a:'Сумма: Σ(выражение с k, от, до). Σ(k,1,100) = 5050, Σ(k²,1,10) = 385',ins:'Σ(k'},
+  {k:'∏',l:'∏',a:'Произведение: ∏(выражение с k, от, до). ∏(k,1,5) = 120',ins:'∏(k'},
+  {k:'k',l:'k',a:'Переменная k для суммы и произведения',ins:'k'},
   {k:'mod',l:'Остаток',a:'Остаток от деления: 7 ост 3 = 1',ins:'ост'},
   {k:'°',l:'°',a:'Градусы, даже в режиме радиан: sin(30°) = 0.5',ins:'°'},
   {k:'НОД',l:'НОД',a:'Наибольший общий делитель: НОД(12,18) = 6',ins:'НОД('},
@@ -928,7 +950,7 @@ function renderMore(){
   for(const d of MORE){
     const b=document.createElement('button');b.type='button';b.className='more-item';
     b.innerHTML='<span class="more-key">'+val(d.l)+'</span><span class="more-desc"></span>';
-    b.lastChild.textContent=d.a;b.setAttribute('aria-label',d.a);
+    const da=val(d.a);b.lastChild.textContent=da;b.setAttribute('aria-label',da);
     b.addEventListener('click',()=>{setMore(false);press(d)});
     list.appendChild(b);
   }
@@ -1030,7 +1052,7 @@ document.addEventListener('paste',e=>{
 function copyResult(){
   const shown=lastShown;
   if(!shown||(S.done&&S.err))return;
-  const plain=shown.replace(/\u2009/g,'').replace(/−/g,'-').replace(/⁄/g,'/');
+  const plain=shown.replace(/×10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/,(_,e)=>'×10^'+[...e].map(ch=>ch==='⁻'?'-':'⁰¹²³⁴⁵⁶⁷⁸⁹'.indexOf(ch)).join('')).replace(/\u2009/g,'').replace(/−/g,'-').replace(/⁄/g,'/');
   if(!plain)return;
   if(window.AndroidBridge){try{window.AndroidBridge.copy(plain);snack('Скопировано: '+shown);return}catch(e){}}
   const fallback=()=>{try{const r=document.createRange();r.selectNodeContents(resEl);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);snack('Результат выделен — скопируйте его')}catch(e){snack('Не удалось скопировать')}};
@@ -1170,6 +1192,7 @@ document.addEventListener('keydown',e=>{
   }
   else if(k==='('||k===')'){insert(k);flash(k)}
   else if(k===','){insert(',')}
+  else if(k==='k'||k==='K'){insert('k')}
   else if(k==='Backspace'){backspace();flash('⌫')}
   else if(k==='Delete'){delForward()}
   else if(k==='ArrowDown'){const i=fracMatch(S.expr,S.cur,'⦙');if(i>=0){S.cur=i+1;render()}}
