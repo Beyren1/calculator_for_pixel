@@ -4,6 +4,10 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Color;
+import android.view.View;
+import android.view.Window;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.HapticFeedbackConstants;
@@ -59,6 +63,31 @@ public class MainActivity extends Activity {
         else web.loadUrl(START_URL);
     }
 
+    /** Back closes an open drawer (history or settings) first, then leaves the app. */
+    @Override
+    public void onBackPressed() {
+        web.evaluateJavascript("window.calcBack ? calcBack() : false", result -> {
+            if (!"true".equals(result)) MainActivity.super.onBackPressed();
+        });
+    }
+
+    /** Match the system bars to the theme chosen inside the calculator. */
+    private void applyBars(String theme) {
+        boolean dark;
+        if ("dark".equals(theme)) dark = true;
+        else if ("light".equals(theme)) dark = false;
+        else dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        int bg = dark ? Color.parseColor("#101318") : Color.parseColor("#F8F9FF");
+        Window w = getWindow();
+        w.setStatusBarColor(bg);
+        w.setNavigationBarColor(bg);
+        w.getDecorView().setBackgroundColor(bg);
+        int flags = w.getDecorView().getSystemUiVisibility();
+        int light = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        flags = dark ? (flags & ~light) : (flags | light);
+        w.getDecorView().setSystemUiVisibility(flags);
+    }
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -77,6 +106,11 @@ public class MainActivity extends Activity {
         public void vibrate(int ms) {
             final int type = ms >= 20 ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.KEYBOARD_TAP;
             web.post(() -> web.performHapticFeedback(type));
+        }
+
+        @JavascriptInterface
+        public void setTheme(String theme) {
+            runOnUiThread(() -> applyBars(theme));
         }
 
         @JavascriptInterface
