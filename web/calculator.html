@@ -347,9 +347,9 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 <script>
 /*ENGINE*/
 const ERR={syntax:'Ошибка в выражении',div0:'Деление на ноль',domain:'Вне области определения',overflow:'Слишком большое число'};
-class CalcError extends Error{constructor(kind){super(ERR[kind]);this.kind=kind}}
+class CalcError extends Error{constructor(kind,msg){super(msg||ERR[kind]);this.kind=kind}}
 // Longer names first: the tokenizer takes the first match.
-const FN_WORDS=['sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sec⁻¹','csc⁻¹','cot⁻¹',
+const FN_WORDS=['arsinh','arcosh','artanh','arcsin','arccos','arctan','sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sec⁻¹','csc⁻¹','cot⁻¹',
   'sinh','cosh','tanh','sin','cos','tan','sec','csc','cot','logₓ','log₂','log','lg','ln','abs','floor','ceil','round','sgn','модуль','вниз','вверх','округл','знак','НОД','НОК','√','∛'];
 const TWO_ARG=new Set(['logₓ','НОД','НОК']);
 const NUM_RE=/^(\d+\.?\d*|\.\d+)(E[+\-−]?\d+)?/;
@@ -468,18 +468,18 @@ function evaluate(src,ctx){
       case 'sec':return recip(cosF(x));
       case 'csc':return recip(sinF(x));
       case 'cot':{const s=sinF(x);if(s===0)throw new CalcError('domain');return chk(snap(cosF(x)/s))}
-      case 'sin⁻¹':if(Math.abs(x)>1)throw new CalcError('domain');return fromRad(Math.asin(x));
-      case 'cos⁻¹':if(Math.abs(x)>1)throw new CalcError('domain');return fromRad(Math.acos(x));
-      case 'tan⁻¹':return fromRad(Math.atan(x));
+      case 'sin⁻¹':case 'arcsin':if(Math.abs(x)>1)throw new CalcError('domain','Арксинус: число должно быть от −1 до 1');return fromRad(Math.asin(x));
+      case 'cos⁻¹':case 'arccos':if(Math.abs(x)>1)throw new CalcError('domain','Арккосинус: число должно быть от −1 до 1');return fromRad(Math.acos(x));
+      case 'tan⁻¹':case 'arctan':return fromRad(Math.atan(x));
       case 'sec⁻¹':if(Math.abs(x)<1)throw new CalcError('domain');return fromRad(Math.acos(1/x));
       case 'csc⁻¹':if(Math.abs(x)<1)throw new CalcError('domain');return fromRad(Math.asin(1/x));
       case 'cot⁻¹':return fromRad(x===0?Math.PI/2:Math.atan(1/x));
       case 'sinh':return chk(Math.sinh(x));
       case 'cosh':return chk(Math.cosh(x));
       case 'tanh':return Math.tanh(x);
-      case 'sinh⁻¹':return chk(Math.asinh(x));
-      case 'cosh⁻¹':if(x<1)throw new CalcError('domain');return chk(Math.acosh(x));
-      case 'tanh⁻¹':if(Math.abs(x)>=1)throw new CalcError('domain');return Math.atanh(x);
+      case 'sinh⁻¹':case 'arsinh':return chk(Math.asinh(x));
+      case 'cosh⁻¹':case 'arcosh':if(x<1)throw new CalcError('domain','Ареакосинус: число должно быть не меньше 1');return chk(Math.acosh(x));
+      case 'tanh⁻¹':case 'artanh':if(Math.abs(x)>=1)throw new CalcError('domain','Ареатангенс: число должно быть между −1 и 1');return Math.atanh(x);
       case 'ln':if(x<=0)throw new CalcError('domain');return Math.log(x);
       case 'log':case 'lg':if(x<=0)throw new CalcError('domain');return Math.log10(x);
       case 'log₂':if(x<=0)throw new CalcError('domain');return Math.log2(x);
@@ -840,10 +840,11 @@ const BASE=[
   {k:'.',l:'.<small class="alt">,</small>',a:'Десятичная точка. Удерживайте — запятая между аргументами',c:'digit',ins:'.',long:()=>{insert(',');snack('Запятая')}},
   {k:'=',l:'=',a:'Равно',c:'eq',run:equals},
 ];
+const INV_NAME={sin:'arcsin',cos:'arccos',tan:'arctan',sinh:'arsinh',cosh:'arcosh',tanh:'artanh'};
 const trig=(n,ru,ruInv)=>({k:n,c:'sci',
-  l:()=>S.inv?n+sup('−1'):n,
+  l:()=>S.inv?(INV_NAME[n].length>6?'<span style="font-size:13px">'+INV_NAME[n]+'</span>':INV_NAME[n]):n,
   a:()=>S.inv?ruInv:ru,
-  ins:()=>S.inv?n+'⁻¹(':n+'('});
+  ins:()=>S.inv?INV_NAME[n]+'(':n+'('});
 const SCI=[
   {k:'inv',l:'Обр',a:'Обратные функции: sin → arcsin и т. д.',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render();if(S.moreOpen)renderMore()}},
   trig('sin','Синус','Арксинус — угол по синусу'),trig('cos','Косинус','Арккосинус — угол по косинусу'),trig('tan','Тангенс','Арктангенс — угол по тангенсу'),
@@ -1164,7 +1165,7 @@ document.addEventListener('keydown',e=>{
   if(/^[0-9]$/.test(k)){viaKey(k)}
   else if(k==='s'||k==='c'||k==='t'||k==='S'||k==='C'||k==='T'){
     const n={s:'sin',c:'cos',t:'tan'}[k.toLowerCase()];
-    insert((S.inv||k!==k.toLowerCase())?n+'⁻¹(':n+'(');flash(n);
+    insert((S.inv||k!==k.toLowerCase())?INV_NAME[n]+'(':n+'(');flash(n);
   }
   else if(k==='('||k===')'){insert(k);flash(k)}
   else if(k===','){insert(',')}
