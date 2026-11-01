@@ -115,6 +115,7 @@ button.badge:hover{background:color-mix(in srgb,var(--on) 8%,transparent)}
 .key.sci[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle);font-weight:500}
 .key.mem{font-size:14px;font-weight:500}
 .key sup,.key sub{font-size:.66em;line-height:0}
+.key .alt{font-size:.5em;opacity:.55;margin-left:.15em;vertical-align:super}
 .ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:rip .55s ease-out forwards;pointer-events:none}
 @keyframes rip{to{transform:scale(1);opacity:0}}
 
@@ -823,7 +824,7 @@ const BASE=[
   {k:'+',l:'+',a:'Плюс',c:'op',ins:'+'},
   {k:'±',l:'±',a:'Сменить знак',c:'digit',run:negate},
   {k:'0',l:'0',a:'0',c:'digit',ins:'0'},
-  {k:'.',l:'.',a:'Десятичная точка',c:'digit',ins:'.'},
+  {k:'.',l:'.<small class="alt">,</small>',a:'Десятичная точка. Удерживайте — запятая между аргументами',c:'digit',ins:'.',long:()=>{insert(',');snack('Запятая')}},
   {k:'=',l:'=',a:'Равно',c:'eq',run:equals},
 ];
 const trig=(n,ru,ruInv)=>({k:n,c:'sci',
@@ -851,8 +852,7 @@ const SCI=[
   {k:'|x|',l:'|x|',a:'Модуль — число без знака',c:'sci',ins:'модуль('},
   {k:'%',l:'%',a:'Процент: 200 + 10% = 220',c:'sci',ins:'%'},
   {k:'frac',l:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="display:block"><rect x="7" y="2.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 12h16" stroke="currentColor" stroke-width="2"/><rect x="7" y="14.5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',a:'Дробь: нажмите и введите числитель, нажмите ещё раз — знаменатель, ещё раз — выйти из дроби',c:'sci',run:fracKey},
-  {k:'SD',l:'<span style="font-size:12px;line-height:1.1;display:block">дробь<br>⇄ число</span>',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
-  {k:',',l:',',a:'Запятая — разделяет основание и число в logₓ',c:'sci',ins:','},
+  {k:'SD',span:2,l:'дробь ⇄ число',a:'Показать ответ дробью или десятичным числом',c:'sci',run:toggleFrac},
 ];
 const MEM=[
   {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();if(S.moreOpen)renderMore();snack('Память очищена')}},
@@ -880,8 +880,14 @@ const keyEls={};
 function build(defs,host){
   for(const d of defs){
     const b=document.createElement('button');
-    b.type='button';b.className='key '+d.c;b.dataset.k=d.k;
+    b.type='button';b.className='key '+d.c;b.dataset.k=d.k;if(d.span)b.style.gridColumn='span '+d.span;
     b.addEventListener('click',()=>{if(b._hinted){b._hinted=false;return}press(d)});
+    if(d.long){ // long press does the alternative action
+      let t=null;
+      b.addEventListener('pointerdown',()=>{b._hinted=false;clearTimeout(t);t=setTimeout(()=>{b._hinted=true;d.long();buzz(20)},450)});
+      ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>clearTimeout(t)));
+      b.addEventListener('contextmenu',e=>e.preventDefault());
+    }
     if(d.c.includes('sci')){ // long press explains what the key does
       let t=null;
       b.addEventListener('pointerdown',()=>{b._hinted=false;clearTimeout(t);t=setTimeout(()=>{b._hinted=true;snack(val(d.a));buzz(20)},500)});
