@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- plus -->
+    <path android:fillColor="@color/icon_fg"
+        android:pathData="M40,33h4v7h7v4h-7v7h-4v-7h-7v-4h7z" />
+    <!-- minus -->
+    <path android:fillColor="@color/icon_fg"
+        android:pathData="M57,40h18v4h-18z" />
+    <!-- times -->
+    <path android:fillColor="@color/icon_fg"
+        android:pathData="M35.3,58.1l2.8,-2.8l3.9,3.9l3.9,-3.9l2.8,2.8l-3.9,3.9l3.9,3.9l-2.8,2.8l-3.9,-3.9l-3.9,3.9l-2.8,-2.8l3.9,-3.9z" />
+    <!-- equals in a filled circle -->
+    <path android:fillColor="@color/icon_fg"
+        android:pathData="M66,51a11,11 0,1 1,0 22a11,11 0,1 1,0 -22z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M60,57.5h12v3h-12zM60,63.5h12v3h-12z" />
+</vector>

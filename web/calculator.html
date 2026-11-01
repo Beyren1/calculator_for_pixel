@@ -1,0 +1,759 @@
+<title>Инженерный калькулятор</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap">
+<style>
+/* Layout: one full-height column — display, toolbar, keypads. Wide screens put the scientific grid left of the base grid; phones slide it over the keypad. */
+:root{
+  --bg:#f8f9ff; --on:#191c21; --muted:#5d6372;
+  --digit:#e6e9f2; --on-digit:#191c21;
+  --op:#d3e3fd; --on-op:#0a305f;
+  --eq:#0b57d0; --on-eq:#ffffff;
+  --util:#d6dae5; --on-util:#3d4351;
+  --sci:#eef1f8; --on-sci:#3d4351;
+  --on-toggle:#0a305f; --toggle:#d3e3fd;
+  --err:#b3261e; --focus:#0b57d0;
+  --sheet:#eff2f9; --line:#d9dde7;
+  --snack:#2e3138; --on-snack:#eff1f8;
+  --scrim:rgba(12,16,24,.34);
+  --font:"Google Sans","Product Sans",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --gap:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101318; --on:#e1e2ea; --muted:#9ba2b1;
+  --digit:#262a32; --on-digit:#e1e2ea;
+  --op:#21406b; --on-op:#d3e3fd;
+  --eq:#a8c7fa; --on-eq:#062e6f;
+  --util:#363b46; --on-util:#c4c8d4;
+  --sci:#1b1f26; --on-sci:#c4c8d4;
+  --toggle:#21406b; --on-toggle:#d3e3fd;
+  --err:#f2b8b5; --focus:#a8c7fa;
+  --sheet:#1a1d24; --line:#2c313b;
+  --snack:#e1e2ea; --on-snack:#2e3138;
+  --scrim:rgba(0,0,0,.5);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#101318; --on:#e1e2ea; --muted:#9ba2b1;
+  --digit:#262a32; --on-digit:#e1e2ea;
+  --op:#21406b; --on-op:#d3e3fd;
+  --eq:#a8c7fa; --on-eq:#062e6f;
+  --util:#363b46; --on-util:#c4c8d4;
+  --sci:#1b1f26; --on-sci:#c4c8d4;
+  --toggle:#21406b; --on-toggle:#d3e3fd;
+  --err:#f2b8b5; --focus:#a8c7fa;
+  --sheet:#1a1d24; --line:#2c313b;
+  --snack:#e1e2ea; --on-snack:#2e3138;
+  --scrim:rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+html{height:100%;box-sizing:border-box}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;background:var(--bg);color:var(--on);font-family:var(--font);overflow:hidden;-webkit-tap-highlight-color:transparent}
+.app{height:100%;max-width:1000px;margin:0 auto;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 16px}
+
+/* Display */
+.display{flex:1 1 auto;min-height:140px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;position:relative;padding-block:28px 6px}
+.status{position:absolute;top:8px;left:4px;display:flex;gap:10px;font-size:12px;font-weight:500;letter-spacing:.08em;color:var(--muted)}
+.expr{width:100%;border:0;background:transparent;color:var(--on);font:inherit;font-size:48px;line-height:1.25;text-align:right;padding:0 2px;
+  caret-color:var(--eq);font-variant-numeric:tabular-nums;outline:none;transition:font-size .28s cubic-bezier(.2,0,0,1),color .28s}
+.expr::placeholder{color:var(--muted);opacity:.6}
+.expr:focus-visible{box-shadow:inset 0 -2px 0 var(--focus)}
+.result{display:block;min-height:1.3em;font-size:28px;line-height:1.3;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;padding:0 2px;border-radius:12px;
+  transition:font-size .28s cubic-bezier(.2,0,0,1),color .28s}
+.result:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.done .expr{color:var(--muted)}
+.done .result{color:var(--on);animation:rise .32s cubic-bezier(.2,0,0,1)}
+.result.error{color:var(--err)}
+@keyframes rise{from{transform:translateY(14px);opacity:.4}}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:4px;padding-block:4px 10px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.toolbar .spacer{flex:1}
+.icon-btn{position:relative;overflow:hidden;width:48px;height:48px;border:0;border-radius:50%;background:transparent;color:var(--on-util);display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn svg{width:24px;height:24px;fill:currentColor}
+.icon-btn[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle)}
+.icon-btn:hover::after,.key:hover::after{opacity:.08}
+.icon-btn::after,.key::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .15s;pointer-events:none;border-radius:inherit}
+.icon-btn:focus-visible,.key:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+#bsBtn{color:var(--on)}
+
+/* Keypads */
+.pads{flex:0 0 58%;min-height:280px;position:relative;overflow:hidden}
+.base,.sci{display:grid;gap:var(--gap);height:100%}
+.base{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(5,1fr)}
+.sci{grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(6,1fr);gap:8px}
+.key{position:relative;overflow:hidden;border:0;border-radius:999px;font:inherit;display:flex;align-items:center;justify-content:center;
+  min-width:48px;min-height:48px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  font-variant-numeric:tabular-nums;transition:border-radius .2s cubic-bezier(.2,0,0,1),background-color .2s}
+.key:active,.key.pressed{border-radius:20px}
+.base .key{font-size:clamp(22px,3.6vh,32px)}
+.key.digit{background:var(--digit);color:var(--on-digit)}
+.key.op{background:var(--op);color:var(--on-op);font-size:clamp(24px,3.9vh,34px)}
+.key.eq{background:var(--eq);color:var(--on-eq);font-size:clamp(26px,4vh,36px)}
+.key.util{background:var(--util);color:var(--on-util);font-size:clamp(20px,3vh,26px);font-weight:500}
+.key.sci{background:var(--sci);color:var(--on-sci);font-size:17px;border-radius:16px}
+.key.sci:active,.key.sci.pressed{border-radius:999px}
+.key.sci[aria-pressed="true"]{background:var(--toggle);color:var(--on-toggle);font-weight:500}
+.key.mem{font-size:15px;font-weight:500}
+.key sup,.key sub{font-size:.62em;line-height:0}
+.ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:rip .55s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(1);opacity:0}}
+
+/* Phone: scientific panel slides over the keypad */
+@media (max-width:719.98px){
+  .sci{position:absolute;inset:0;z-index:2;background:var(--bg);transform:translateX(104%);transition:transform .3s cubic-bezier(.2,0,0,1);visibility:hidden}
+  .pads.sci-open .sci{transform:none;visibility:visible}
+  .sci .key{font-size:16px}
+}
+@media (max-width:719.98px) and (max-height:620px){.pads{flex-basis:62%}:root{--gap:8px}}
+@media (min-width:720px){
+  .app{padding-block:16px 24px}
+  .pads{flex:0 0 auto;height:min(62vh,500px);display:grid;grid-template-columns:5fr 4fr;gap:24px}
+  #moreBtn{display:none}
+  .expr{font-size:64px}
+}
+
+/* History sheet */
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;top:0;bottom:0;left:0;z-index:30;width:min(380px,88vw);background:var(--sheet);color:var(--on);border-radius:0 28px 28px 0;
+  transform:translateX(-104%);transition:transform .32s cubic-bezier(.2,0,0,1);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.sheet.open{transform:none}
+.sheet-head{display:flex;align-items:center;gap:8px;padding:12px 12px 8px 24px}
+.sheet-head h2{flex:1;margin:0;font-size:22px;font-weight:400}
+.text-btn{border:0;background:transparent;color:var(--eq);font:inherit;font-size:14px;font-weight:500;letter-spacing:.02em;min-height:48px;padding:0 14px;border-radius:999px;cursor:pointer}
+:root[data-theme="dark"] .text-btn{color:var(--eq)}
+.text-btn:hover{background:color-mix(in srgb,var(--eq) 10%,transparent)}
+.text-btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.text-btn:disabled{color:var(--muted);opacity:.5;cursor:default}
+.hist-list{list-style:none;margin:0;padding:4px 12px 16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:4px}
+.hist-item{width:100%;border:0;background:transparent;color:var(--on);font:inherit;text-align:right;padding:12px 14px;border-radius:16px;cursor:pointer;display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums;min-height:48px}
+.hist-item:hover{background:color-mix(in srgb,var(--on) 6%,transparent)}
+.hist-item:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.hist-expr{color:var(--muted);font-size:15px;word-break:break-all}
+.hist-res{font-size:22px;word-break:break-all}
+.hist-empty{color:var(--muted);text-align:center;padding:48px 24px;font-size:15px;line-height:1.5}
+
+/* Snackbar */
+.snackbar{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:40;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:var(--snack);color:var(--on-snack);padding:14px 20px;border-radius:8px;font-size:14px;max-width:calc(100vw - 32px);box-shadow:0 4px 16px rgba(0,0,0,.2);
+  transition:opacity .2s,transform .2s cubic-bezier(.2,0,0,1)}
+.snackbar.show{opacity:1;transform:translate(-50%,0)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+
+<main class="app" id="app">
+  <section class="display" id="display" aria-label="Дисплей">
+    <div class="status"><span id="angleBadge">DEG</span><span id="invBadge" hidden>INV</span><span id="memBadge" hidden title="В памяти есть число">M</span></div>
+    <input id="expr" class="expr" type="text" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="0" aria-label="Выражение">
+    <output id="result" class="result" tabindex="0" role="button" aria-live="polite" aria-label="Результат. Нажмите, чтобы скопировать"></output>
+  </section>
+
+  <div class="toolbar">
+    <button id="histBtn" class="icon-btn" type="button" aria-label="История вычислений" title="История (H)" aria-expanded="false" aria-controls="history">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+    </button>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="Тема: как в системе" title="Тема: как в системе">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-17.93c3.94.49 7 3.86 7 7.93s-3.06 7.44-7 7.93V4.07z"/></svg>
+    </button>
+    <button id="moreBtn" class="icon-btn" type="button" aria-label="Научные функции" title="Научные функции" aria-pressed="false" aria-controls="sci">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </button>
+    <span class="spacer"></span>
+    <button id="bsBtn" class="icon-btn" type="button" aria-label="Стереть символ. Долгое нажатие — очистить всё" title="Стереть (долгое нажатие — очистить)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7.07L2.4 12l4.66-7H22v14zm-11.59-2L14 13.41 17.59 17 19 15.59 15.41 12 19 8.41 17.59 7 14 10.59 10.41 7 9 8.41 12.59 12 9 15.59z"/></svg>
+    </button>
+  </div>
+
+  <section class="pads" id="pads">
+    <div class="sci" id="sci" role="group" aria-label="Научные функции"></div>
+    <div class="base" id="base" role="group" aria-label="Основные кнопки"></div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="history" aria-label="История вычислений" inert>
+  <div class="sheet-head">
+    <h2>История</h2>
+    <button class="text-btn" id="histClear" type="button">Очистить</button>
+    <button class="icon-btn" id="histClose" type="button" aria-label="Закрыть историю">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+  <ul class="hist-list" id="histList"></ul>
+</aside>
+<div class="snackbar" id="snack" role="status" aria-live="polite"></div>
+
+<script>
+/*ENGINE*/
+const ERR={syntax:'Ошибка в выражении',div0:'Деление на ноль',domain:'Вне области определения',overflow:'Слишком большое число'};
+class CalcError extends Error{constructor(kind){super(ERR[kind]);this.kind=kind}}
+const FN_WORDS=['sinh⁻¹','cosh⁻¹','tanh⁻¹','sin⁻¹','cos⁻¹','tan⁻¹','sinh','cosh','tanh','sin','cos','tan','logₓ','log','ln','abs','√','∛'];
+const NUM_RE=/^(\d+\.?\d*|\.\d+)(E[+\-−]?\d+)?/;
+
+function tokenize(s){
+  const out=[];let i=0;
+  while(i<s.length){
+    const ch=s[i];
+    if(ch===' '){i++;continue}
+    const m=NUM_RE.exec(s.slice(i));
+    if(m){
+      const v=Number(m[0].replace('−','-'));
+      if(!isFinite(v))throw new CalcError('overflow');
+      out.push({t:'num',v});i+=m[0].length;
+      if(s[i]==='.')throw new CalcError('syntax');
+      continue;
+    }
+    const w=FN_WORDS.find(f=>s.startsWith(f,i));
+    if(w){out.push({t:'fn',v:w});i+=w.length;continue}
+    if(s.startsWith('ⁿ√',i)){out.push({t:'op',v:'root'});i+=2;continue}
+    if(s.startsWith('mod',i)){out.push({t:'op',v:'mod'});i+=3;continue}
+    if(s.startsWith('Ans',i)){out.push({t:'const',v:'Ans'});i+=3;continue}
+    if(s.startsWith('⁻¹',i)){out.push({t:'post',v:'inv'});i+=2;continue}
+    switch(ch){
+      case 'π':case 'e':out.push({t:'const',v:ch});break;
+      case '²':case '!':case '%':out.push({t:'post',v:ch});break;
+      case '+':out.push({t:'op',v:'+'});break;
+      case '-':case '−':out.push({t:'op',v:'-'});break;
+      case '×':case '*':out.push({t:'op',v:'*'});break;
+      case '÷':case '/':out.push({t:'op',v:'/'});break;
+      case '^':out.push({t:'op',v:'^'});break;
+      case '(':case ')':case ',':out.push({t:ch});break;
+      default:throw new CalcError('syntax');
+    }
+    i++;
+  }
+  return out;
+}
+
+function chk(v){if(Number.isNaN(v))throw new CalcError('domain');if(!isFinite(v))throw new CalcError('overflow');return v}
+function gamma(z){
+  if(z<0.5)return Math.PI/(Math.sin(Math.PI*z)*gamma(1-z));
+  z-=1;const c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  let x=c[0];for(let i=1;i<9;i++)x+=c[i]/(z+i);const t=z+7.5;
+  return Math.sqrt(2*Math.PI)*Math.pow(t,z+0.5)*Math.exp(-t)*x;
+}
+function fact(x){
+  if(x<0&&Number.isInteger(x))throw new CalcError('domain');
+  if(x>170.6)throw new CalcError('overflow');
+  if(Number.isInteger(x)){let r=1;for(let i=2;i<=x;i++)r*=i;return r}
+  return chk(gamma(x+1));
+}
+function pow(a,b){
+  if(a===0&&b<0)throw new CalcError('div0');
+  let r=Math.pow(a,b);
+  if(Number.isNaN(r)&&a<0){const inv=1/b,ri=Math.round(inv);if(Math.abs(inv-ri)<1e-9&&Math.abs(ri)%2===1)r=-Math.pow(-a,b)}
+  return chk(r);
+}
+function nroot(n,x){
+  if(n===0)throw new CalcError('domain');
+  if(x<0){if(Number.isInteger(n)&&Math.abs(n)%2===1)return chk(-Math.pow(-x,1/n));throw new CalcError('domain')}
+  if(x===0&&n<0)throw new CalcError('div0');
+  return chk(Math.pow(x,1/n));
+}
+const mod360=x=>((x%360)+360)%360;
+
+function evaluate(src,ctx){
+  const D=!!ctx.deg;
+  const toks=tokenize(src);let p=0,pct=false;
+  const peek=()=>toks[p],next=()=>toks[p++];
+  const isOp=(t,v)=>!!t&&t.t==='op'&&t.v===v;
+  const startsPrimary=t=>!!t&&(t.t==='num'||t.t==='const'||t.t==='fn'||t.t==='(');
+  const toRad=x=>D?x*Math.PI/180:x, fromRad=x=>D?x*180/Math.PI:x;
+  const snap=v=>Math.abs(v)<1e-14?0:v; // sin(π) → 0, not 1.2E-16
+
+  function sinF(x){if(D){const r=mod360(x);if(r%180===0)return 0;if(r===90)return 1;if(r===270)return -1;if(r===30||r===150)return .5;if(r===210||r===330)return -.5}return snap(Math.sin(toRad(x)))}
+  function cosF(x){if(D){const r=mod360(x);if(r===90||r===270)return 0;if(r===0)return 1;if(r===180)return -1;if(r===60||r===300)return .5;if(r===120||r===240)return -.5}return snap(Math.cos(toRad(x)))}
+  function tanF(x){
+    if(D){const r=mod360(x);if(r%180===0)return 0;if(r%180===90)throw new CalcError('domain');if(r===45||r===225)return 1;if(r===135||r===315)return -1}
+    const a=toRad(x);if(Math.abs(Math.cos(a))<1e-15)throw new CalcError('domain');return snap(Math.tan(a));
+  }
+  function applyFn(name,args){
+    const need=name==='logₓ'?2:1;
+    if(args.length!==need)throw new CalcError('syntax');
+    const x=args[0];
+    switch(name){
+      case 'sin':return chk(sinF(x));
+      case 'cos':return chk(cosF(x));
+      case 'tan':return chk(tanF(x));
+      case 'sin⁻¹':if(Math.abs(x)>1)throw new CalcError('domain');return fromRad(Math.asin(x));
+      case 'cos⁻¹':if(Math.abs(x)>1)throw new CalcError('domain');return fromRad(Math.acos(x));
+      case 'tan⁻¹':return fromRad(Math.atan(x));
+      case 'sinh':return chk(Math.sinh(x));
+      case 'cosh':return chk(Math.cosh(x));
+      case 'tanh':return Math.tanh(x);
+      case 'sinh⁻¹':return chk(Math.asinh(x));
+      case 'cosh⁻¹':if(x<1)throw new CalcError('domain');return chk(Math.acosh(x));
+      case 'tanh⁻¹':if(Math.abs(x)>=1)throw new CalcError('domain');return Math.atanh(x);
+      case 'ln':if(x<=0)throw new CalcError('domain');return Math.log(x);
+      case 'log':if(x<=0)throw new CalcError('domain');return Math.log10(x);
+      case 'logₓ':{const b=args[0],y=args[1];if(b<=0||b===1||y<=0)throw new CalcError('domain');return chk(Math.log(y)/Math.log(b))}
+      case '√':if(x<0)throw new CalcError('domain');return Math.sqrt(x);
+      case '∛':return Math.cbrt(x);
+      case 'abs':return Math.abs(x);
+    }
+    throw new CalcError('syntax');
+  }
+  function binop(op,a,b){
+    if(op==='*')return chk(a*b);
+    if(op==='/'){if(b===0)throw new CalcError('div0');return chk(a/b)}
+    if(op==='mod'){if(b===0)throw new CalcError('div0');return chk(a-b*Math.floor(a/b))}
+  }
+  function expr(){
+    let left=term().v;
+    while(isOp(peek(),'+')||isOp(peek(),'-')){
+      const op=next().v;const r=term();
+      const d=r.pct?left*r.v:r.v; // 200+10% = 220
+      left=chk(op==='+'?left+d:left-d);
+    }
+    return left;
+  }
+  function term(){
+    let v=unary(),isPct=pct;
+    for(;;){
+      const t=peek();
+      if(isOp(t,'*')||isOp(t,'/')||isOp(t,'mod')){next();v=binop(t.v,v,unary());isPct=false}
+      else if(startsPrimary(t)){v=chk(v*unary());isPct=false} // implicit multiplication
+      else break;
+    }
+    return {v,pct:isPct};
+  }
+  function unary(){
+    const t=peek();
+    if(isOp(t,'-')){next();return -unary()}
+    if(isOp(t,'+')){next();return unary()}
+    return power();
+  }
+  function power(){
+    const base=postfix();const t=peek();
+    if(isOp(t,'^')){next();const e=unary();pct=false;return pow(base,e)}
+    if(isOp(t,'root')){next();const x=unary();pct=false;return nroot(base,x)}
+    return base;
+  }
+  function postfix(){
+    let v=primary();pct=false;
+    for(;;){
+      const t=peek();if(!t||t.t!=='post')break;next();pct=false;
+      if(t.v==='!')v=fact(v);
+      else if(t.v==='%'){v=v/100;pct=true}
+      else if(t.v==='²')v=chk(v*v);
+      else if(t.v==='inv'){if(v===0)throw new CalcError('div0');v=1/v}
+    }
+    return v;
+  }
+  function closeParen(){const t=peek();if(!t)return;if(t.t===')'){next();return}throw new CalcError('syntax')} // missing ")" at the end closes itself
+  function primary(){
+    const t=next();if(!t)throw new CalcError('syntax');
+    if(t.t==='num')return t.v;
+    if(t.t==='const')return t.v==='π'?Math.PI:t.v==='e'?Math.E:(ctx.ans||0);
+    if(t.t==='('){const v=expr();closeParen();return v}
+    if(t.t==='fn'){
+      if(peek()&&peek().t==='('){
+        next();const args=[expr()];
+        while(peek()&&peek().t===','){next();args.push(expr())}
+        closeParen();return applyFn(t.v,args);
+      }
+      if(t.v==='√'||t.v==='∛'){const a=isOp(peek(),'-')?(next(),-postfix()):postfix();pct=false;return applyFn(t.v,[a])}
+      throw new CalcError('syntax');
+    }
+    throw new CalcError('syntax');
+  }
+  const v=expr();
+  if(p<toks.length)throw new CalcError('syntax');
+  return chk(v);
+}
+function round15(v){if(v===0)return 0;const r=Number(v.toPrecision(15));return Object.is(r,-0)?0:r}
+function fmt(v){
+  v=round15(v);const a=Math.abs(v);let s;
+  if(a!==0&&(a>=1e15||a<1e-6)){
+    let [m,e]=v.toExponential(10).split('e');
+    if(m.includes('.'))m=m.replace(/\.?0+$/,'');
+    s=m+'E'+(e[0]==='+'?e.slice(1):e);
+  }else{
+    s=v.toPrecision(15);
+    if(s.includes('.'))s=s.replace(/\.?0+$/,'');
+  }
+  return s.replace(/^-/,'−');
+}
+/*END ENGINE*/
+
+(function(){
+const $=id=>document.getElementById(id);
+function buzz(ms){try{if(window.AndroidBridge)window.AndroidBridge.vibrate(ms);else if(navigator.vibrate)navigator.vibrate(ms)}catch(_){}}
+const exprEl=$('expr'),resEl=$('result'),dispEl=$('display'),padsEl=$('pads'),sciEl=$('sci'),baseEl=$('base');
+const S={expr:'',cur:0,done:false,res:'',err:false,inv:false,deg:true,ans:0,mem:null,hist:[],theme:'auto',sciOpen:false,histOpen:false};
+const KEY='eng-calc-v1';
+try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');
+  if(Array.isArray(d.hist))S.hist=d.hist.filter(h=>h&&typeof h.expr==='string'&&typeof h.result==='string').slice(0,100);
+  if(typeof d.mem==='number')S.mem=d.mem;
+  if(typeof d.deg==='boolean')S.deg=d.deg;
+  if(typeof d.ans==='number')S.ans=d.ans;
+  if(['auto','light','dark'].includes(d.theme))S.theme=d.theme;
+}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({hist:S.hist,mem:S.mem,deg:S.deg,ans:S.ans,theme:S.theme}))}catch(e){}}
+
+/* ---------- editing ---------- */
+const BIN=['+','−','×','÷','^','mod','ⁿ√'];
+const CONT=new Set([...BIN,'²','!','%','⁻¹',')']);
+const DEL_TOKENS=[...FN_WORDS.filter(f=>f!=='√'&&f!=='∛').map(f=>f+'('),'ⁿ√','⁻¹','Ans','mod'].sort((a,b)=>b.length-a.length);
+
+function beginEdit(kind){
+  if(!S.done)return;
+  const wasErr=S.err;S.done=false;S.err=false;
+  if(kind==='fresh'||(kind==='continue'&&wasErr))S.expr='';
+  else if(kind==='continue')S.expr=S.res;
+  S.cur=S.expr.length;
+}
+function insert(text){
+  beginEdit(CONT.has(text)?'continue':'fresh');
+  let before=S.expr.slice(0,S.cur);const after=S.expr.slice(S.cur);
+  if(BIN.includes(text)){
+    if(before===''){
+      if(text!=='−'){if(S.hist.length)before='Ans';else return}
+    }else{
+      const last=BIN.find(o=>before.endsWith(o));
+      if(last){
+        const unaryMinus=text==='−'&&!['+','−'].includes(last);
+        if(!unaryMinus)before=before.slice(0,-last.length);
+      }
+      if(before.endsWith('(')&&text!=='−')return;
+    }
+  }else if(text==='.'){
+    const seg=/[\d.]*$/.exec(before)[0];
+    if(seg.includes('.'))return;
+    if(seg==='')text='0.';
+  }else if(text==='10^('&&/[\d.]$/.test(before)){text='×10^('}
+  S.expr=before+text+after;S.cur=before.length+text.length;
+  render();
+}
+function insertValue(v){
+  let s=fmt(v);
+  beginEdit('fresh');
+  const before=S.expr.slice(0,S.cur);
+  if(s.startsWith('−')&&before!==''&&!/[(]$/.test(before))s='('+s+')';
+  if(/[\d.]$/.test(before))s='×'+s;
+  S.expr=before+s+S.expr.slice(S.cur);S.cur=before.length+s.length;render();
+}
+function smartParen(){
+  if(S.done){beginEdit('fresh')}
+  const before=S.expr.slice(0,S.cur);
+  const open=(before.match(/\(/g)||[]).length-(before.match(/\)/g)||[]).length;
+  insert(open>0&&/([\d.)πe²!%¹]|Ans)$/.test(before)?')':'(');
+}
+function backspace(){
+  if(S.done){beginEdit('edit');render();return}
+  if(S.cur===0)return;
+  const before=S.expr.slice(0,S.cur);
+  const tok=DEL_TOKENS.find(t=>before.endsWith(t));
+  const n=tok?tok.length:1;
+  S.expr=before.slice(0,-n)+S.expr.slice(S.cur);S.cur-=n;render();
+}
+function delForward(){
+  if(S.done){beginEdit('edit')}
+  if(S.cur>=S.expr.length){render();return}
+  const after=S.expr.slice(S.cur);
+  const tok=DEL_TOKENS.find(t=>after.startsWith(t));
+  S.expr=S.expr.slice(0,S.cur)+after.slice(tok?tok.length:1);render();
+}
+function clearAll(){S.expr='';S.cur=0;S.done=false;S.err=false;S.res='';render()}
+function negate(){
+  if(S.done){if(S.err)return;beginEdit('continue')}
+  const s=S.expr,c=S.cur;let i=c;
+  if(s.slice(0,c).endsWith('Ans'))i=c-3;
+  else while(i>0){const ch=s[i-1];if(/[\d.Eπe]/.test(ch))i--;else if((ch==='-'||ch==='+')&&s[i-2]==='E')i--;else break}
+  if(i===c){insert('−');return}
+  const prev=s[i-1],prev2=s[i-2];
+  if(prev==='−'&&(i-1===0||/[+−×÷^(,d]/.test(prev2)||s.slice(0,i-1).endsWith('ⁿ√'))){S.expr=s.slice(0,i-1)+s.slice(i);S.cur=c-1}
+  else if(prev==='−'){S.expr=s.slice(0,i-1)+'+'+s.slice(i)}
+  else if(prev==='+'){S.expr=s.slice(0,i-1)+'−'+s.slice(i)}
+  else{S.expr=s.slice(0,i)+'−'+s.slice(i);S.cur=c+1}
+  render();
+}
+function equals(){
+  if(S.done)return;
+  let src=S.expr.trim();if(!src)return;
+  const open=(src.match(/\(/g)||[]).length-(src.match(/\)/g)||[]).length;
+  if(open>0)src+=')'.repeat(open);
+  S.expr=src;
+  try{
+    const v=round15(evaluate(src,{deg:S.deg,ans:S.ans}));
+    S.ans=v;S.res=fmt(v);S.err=false;
+    S.hist.unshift({expr:src,result:S.res});if(S.hist.length>100)S.hist.length=100;
+    renderHistory();
+  }catch(e){S.res=e instanceof CalcError?e.message:ERR.syntax;S.err=true}
+  S.done=true;S.cur=S.expr.length;save();render();
+}
+function currentValue(){
+  if(S.done)return S.err?null:S.ans;
+  if(!S.expr.trim())return null;
+  try{return round15(evaluate(S.expr,{deg:S.deg,ans:S.ans}))}catch(e){return null}
+}
+function memAdd(sign){
+  const v=currentValue();
+  if(v===null){snack('Нет числа для памяти');return}
+  S.mem=round15((S.mem||0)+sign*v);save();render();snack('В памяти: '+fmt(S.mem));
+}
+function preview(){
+  const src=S.expr.trim();if(!src)return '';
+  try{
+    const t=tokenize(src);
+    if(t.length===1&&t[0].t==='num')return '';
+    if(t.length===2&&isNegNum(t))return '';
+    return fmt(evaluate(src,{deg:S.deg,ans:S.ans}));
+  }catch(e){return ''}
+}
+function isNegNum(t){return t[0].t==='op'&&t[0].v==='-'&&t[1].t==='num'}
+
+/* ---------- keys ---------- */
+const sup=s=>`<sup>${s}</sup>`;
+const BASE=[
+  {k:'AC',l:'AC',a:'Очистить всё',c:'util',run:clearAll},
+  {k:'()',l:'( )',a:'Скобки',c:'op',run:smartParen},
+  {k:'%',l:'%',a:'Процент',c:'op',ins:'%'},
+  {k:'÷',l:'÷',a:'Разделить',c:'op',ins:'÷'},
+  ...['7','8','9'].map(d=>({k:d,l:d,a:d,c:'digit',ins:d})),
+  {k:'×',l:'×',a:'Умножить',c:'op',ins:'×'},
+  ...['4','5','6'].map(d=>({k:d,l:d,a:d,c:'digit',ins:d})),
+  {k:'−',l:'−',a:'Минус',c:'op',ins:'−'},
+  ...['1','2','3'].map(d=>({k:d,l:d,a:d,c:'digit',ins:d})),
+  {k:'+',l:'+',a:'Плюс',c:'op',ins:'+'},
+  {k:'±',l:'±',a:'Сменить знак',c:'digit',run:negate},
+  {k:'0',l:'0',a:'0',c:'digit',ins:'0'},
+  {k:'.',l:'.',a:'Десятичная точка',c:'digit',ins:'.'},
+  {k:'=',l:'=',a:'Равно',c:'eq',run:equals},
+];
+const trig=(n,ru,ruInv,hyp)=>({k:n,c:'sci',
+  l:()=>S.inv?n+sup('−1'):n,
+  a:()=>S.inv?ruInv:ru,
+  ins:()=>S.inv?n+'⁻¹(':n+'('});
+const SCI=[
+  {k:'MC',l:'MC',a:'Очистить память',c:'sci mem',run:()=>{S.mem=null;save();render();snack('Память очищена')}},
+  {k:'MR',l:'MR',a:'Вызвать число из памяти',c:'sci mem',run:()=>{if(S.mem===null)snack('Память пуста');else insertValue(S.mem)}},
+  {k:'M+',l:'M+',a:'Прибавить к памяти',c:'sci mem',run:()=>memAdd(1)},
+  {k:'M−',l:'M−',a:'Вычесть из памяти',c:'sci mem',run:()=>memAdd(-1)},
+  {k:'Ans',l:'Ans',a:'Последний результат',c:'sci',ins:'Ans'},
+  {k:'deg',l:()=>S.deg?'DEG':'RAD',a:()=>S.deg?'Градусы. Переключить на радианы':'Радианы. Переключить на градусы',c:'sci',toggle:()=>!S.deg,run:()=>{S.deg=!S.deg;save();render();snack(S.deg?'Углы в градусах':'Углы в радианах')}},
+  {k:'inv',l:'Inv',a:'Обратные функции',c:'sci',toggle:()=>S.inv,run:()=>{S.inv=!S.inv;render()}},
+  trig('sin','Синус','Арксинус'),trig('cos','Косинус','Арккосинус'),trig('tan','Тангенс','Арктангенс'),
+  trig('sinh','Гиперболический синус','Обратный гиперболический синус'),
+  trig('cosh','Гиперболический косинус','Обратный гиперболический косинус'),
+  trig('tanh','Гиперболический тангенс','Обратный гиперболический тангенс'),
+  {k:'π',l:'π',a:'Число пи',c:'sci',ins:'π'},
+  {k:'e',l:'e',a:'Число e',c:'sci',ins:'e'},
+  {k:'ln',l:'ln',a:'Натуральный логарифм',c:'sci',ins:'ln('},
+  {k:'log',l:'log',a:'Десятичный логарифм',c:'sci',ins:'log('},
+  {k:'logxy',l:'log<sub>x</sub>y',a:'Логарифм y по основанию x: logₓ(x, y)',c:'sci',ins:'logₓ('},
+  {k:'mod',l:'mod',a:'Остаток от деления',c:'sci',ins:'mod'},
+  {k:',',l:',',a:'Запятая между аргументами',c:'sci',ins:','},
+  {k:'√',l:'√',a:'Квадратный корень',c:'sci',ins:'√'},
+  {k:'∛',l:'∛',a:'Кубический корень',c:'sci',ins:'∛'},
+  {k:'ⁿ√',l:sup('n')+'√x',a:'Корень n-й степени: n ⁿ√ x',c:'sci',ins:'ⁿ√'},
+  {k:'x²',l:'x'+sup('2'),a:'Квадрат',c:'sci',ins:'²'},
+  {k:'xʸ',l:'x'+sup('y'),a:'Возвести в степень',c:'sci',ins:'^'},
+  {k:'eˣ',l:'e'+sup('x'),a:'e в степени x',c:'sci',ins:'e^('},
+  {k:'10ˣ',l:'10'+sup('x'),a:'10 в степени x',c:'sci',ins:'10^('},
+  {k:'n!',l:'n!',a:'Факториал',c:'sci',ins:'!'},
+  {k:'|x|',l:'|x|',a:'Модуль',c:'sci',ins:'abs('},
+  {k:'1/x',l:'1/x',a:'Обратное число',c:'sci',ins:'⁻¹'},
+];
+const val=(f)=>typeof f==='function'?f():f;
+const keyEls={};
+function build(defs,host){
+  for(const d of defs){
+    const b=document.createElement('button');
+    b.type='button';b.className='key '+d.c;b.dataset.k=d.k;
+    b.addEventListener('click',()=>{press(d);});
+    host.appendChild(b);keyEls[d.k]={el:b,d};
+  }
+}
+function press(d){
+  if(d.run)d.run();else insert(val(d.ins));
+}
+function refreshKeys(){
+  for(const k in keyEls){const {el,d}=keyEls[k];
+    const l=val(d.l),a=val(d.a);
+    if(el._l!==l){el.innerHTML='<span>'+l+'</span>';el._l=l}
+    el.setAttribute('aria-label',a);
+    if(d.toggle)el.setAttribute('aria-pressed',String(!!d.toggle()));
+  }
+}
+build(SCI,sciEl);build(BASE,baseEl);
+
+/* ripple + keep caret focus + haptics */
+document.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.key,.icon-btn');if(!b)return;
+  if(document.activeElement===exprEl&&b.classList.contains('key'))e.preventDefault();
+  const r=b.getBoundingClientRect(),size=Math.max(r.width,r.height)*2;
+  const s=document.createElement('span');s.className='ripple';
+  s.style.width=s.style.height=size+'px';
+  s.style.left=(e.clientX-r.left-size/2)+'px';s.style.top=(e.clientY-r.top-size/2)+'px';
+  b.appendChild(s);setTimeout(()=>s.remove(),600);
+  if(e.pointerType==='touch'){buzz(8)}
+});
+document.addEventListener('mousedown',e=>{if(document.activeElement===exprEl&&e.target.closest('.key,#bsBtn'))e.preventDefault()});
+
+/* backspace with long press */
+const bs=$('bsBtn');let lpTimer=null,lpFired=false;
+bs.addEventListener('pointerdown',()=>{lpFired=false;clearTimeout(lpTimer);lpTimer=setTimeout(()=>{lpFired=true;clearAll();buzz(30)},550)});
+['pointerup','pointerleave','pointercancel'].forEach(t=>bs.addEventListener(t,()=>clearTimeout(lpTimer)));
+bs.addEventListener('click',()=>{if(lpFired){lpFired=false;return}backspace()});
+bs.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ---------- display ---------- */
+const FONT='"Google Sans","Product Sans",Roboto,system-ui,sans-serif';
+const cv=document.createElement('canvas').getContext('2d');
+function fitSize(text,max,min,width){
+  if(!text||width<=0)return max;
+  cv.font=`400 ${max}px ${FONT}`;const w=cv.measureText(text).width+4;
+  return w<=width?max:Math.max(min,Math.floor(max*width/w));
+}
+function render(){
+  if(exprEl.value!==S.expr)exprEl.value=S.expr;
+  if(document.activeElement===exprEl){try{exprEl.setSelectionRange(S.cur,S.cur)}catch(e){}}
+  dispEl.classList.toggle('done',S.done);
+  const pv=S.done?S.res:preview();
+  resEl.textContent=pv;
+  resEl.classList.toggle('error',S.done&&S.err);
+  $('angleBadge').textContent=S.deg?'DEG':'RAD';
+  $('memBadge').hidden=S.mem===null;
+  $('invBadge').hidden=!S.inv;
+  refreshKeys();
+  const wide=innerWidth>=720,h=dispEl.clientHeight,w=dispEl.clientWidth-4;
+  const big=Math.round(Math.min(wide?72:60,Math.max(36,h*0.3))),small=Math.round(big*0.5);
+  if(S.done){
+    exprEl.style.fontSize=fitSize(S.expr,small,14,w)+'px';
+    resEl.style.fontSize=fitSize(pv,big,22,w)+'px';
+  }else{
+    exprEl.style.fontSize=fitSize(S.expr,big,22,w)+'px';
+    resEl.style.fontSize=fitSize(pv,small,14,w)+'px';
+  }
+  if(document.activeElement!==exprEl)exprEl.scrollLeft=exprEl.scrollWidth;
+}
+
+/* caret editing in the middle */
+exprEl.addEventListener('beforeinput',e=>e.preventDefault());
+exprEl.addEventListener('pointerup',()=>{
+  if(S.done){S.done=false;S.err=false;render()}
+  setTimeout(()=>{S.cur=exprEl.selectionStart??S.expr.length},0);
+});
+document.addEventListener('selectionchange',()=>{if(document.activeElement===exprEl&&exprEl.selectionStart!=null)S.cur=exprEl.selectionStart});
+exprEl.addEventListener('paste',e=>{
+  e.preventDefault();
+  let t=(e.clipboardData&&e.clipboardData.getData('text'))||'';
+  t=t.replace(/\*/g,'×').replace(/\//g,'÷').replace(/-/g,'−').replace(/pi/gi,'π').replace(/sqrt/gi,'√').replace(/\s+/g,'');
+  if(!t)return;
+  if(S.done){S.done=false;S.err=false;S.expr='';S.cur=0}
+  S.expr=S.expr.slice(0,S.cur)+t+S.expr.slice(S.cur);S.cur+=t.length;render();
+});
+
+/* copy result */
+function copyResult(){
+  const txt=resEl.textContent;
+  if(!txt||(S.done&&S.err))return;
+  const plain=txt.replace('−','-');
+  if(window.AndroidBridge){try{window.AndroidBridge.copy(plain);snack('Скопировано: '+txt);return}catch(e){}}
+  const fallback=()=>{try{const r=document.createRange();r.selectNodeContents(resEl);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);snack('Результат выделен — скопируйте его')}catch(e){snack('Не удалось скопировать')}};
+  try{navigator.clipboard.writeText(plain).then(()=>snack('Скопировано: '+txt),fallback)}catch(e){fallback()}
+}
+resEl.addEventListener('click',copyResult);
+resEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();copyResult()}});
+
+/* snackbar */
+const sn=$('snack');let snT;
+function snack(msg){sn.textContent=msg;sn.classList.add('show');clearTimeout(snT);snT=setTimeout(()=>sn.classList.remove('show'),2200)}
+
+/* scientific panel (phone) */
+const moreBtn=$('moreBtn');
+const mqWide=matchMedia('(min-width:720px)');
+function setSci(open){
+  S.sciOpen=open;padsEl.classList.toggle('sci-open',open);moreBtn.setAttribute('aria-pressed',String(open));
+  const hide=!mqWide.matches&&!open;
+  sciEl.inert=hide;baseEl.inert=!mqWide.matches&&open;
+}
+moreBtn.addEventListener('click',()=>setSci(!S.sciOpen));
+(mqWide.addEventListener?mqWide.addEventListener('change',()=>{setSci(S.sciOpen);render()}):mqWide.addListener(()=>setSci(S.sciOpen)));
+let tx=null,ty=0;
+padsEl.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});
+padsEl.addEventListener('touchend',e=>{
+  if(tx===null||mqWide.matches)return;const t=e.changedTouches[0];const dx=t.clientX-tx,dy=t.clientY-ty;tx=null;
+  if(Math.abs(dx)>60&&Math.abs(dy)<50){if(dx<0&&!S.sciOpen)setSci(true);else if(dx>0&&S.sciOpen)setSci(false)}
+},{passive:true});
+
+/* history */
+const hist=$('history'),scrim=$('scrim'),histBtn=$('histBtn'),histList=$('histList');
+function renderHistory(){
+  histList.innerHTML='';
+  $('histClear').disabled=!S.hist.length;
+  if(!S.hist.length){histList.innerHTML='<li class="hist-empty">Здесь появятся ваши вычисления.<br>Нажмите на запись, чтобы вернуть выражение в строку ввода.</li>';return}
+  S.hist.forEach(h=>{
+    const li=document.createElement('li');const b=document.createElement('button');
+    b.type='button';b.className='hist-item';b.setAttribute('aria-label',`${h.expr} равно ${h.result}. Вставить выражение`);
+    const e=document.createElement('span');e.className='hist-expr';e.textContent=h.expr;
+    const r=document.createElement('span');r.className='hist-res';r.textContent='= '+h.result;
+    b.append(e,r);b.addEventListener('click',()=>{S.expr=h.expr;S.cur=h.expr.length;S.done=false;S.err=false;setHist(false);render()});
+    li.appendChild(b);histList.appendChild(li);
+  });
+}
+function setHist(open){
+  S.histOpen=open;hist.classList.toggle('open',open);scrim.classList.toggle('show',open);
+  hist.inert=!open;histBtn.setAttribute('aria-expanded',String(open));
+  $('app').inert=open;
+  if(open){renderHistory();setTimeout(()=>$('histClose').focus(),50)}else histBtn.focus({preventScroll:true});
+}
+histBtn.addEventListener('click',()=>setHist(true));
+$('histClose').addEventListener('click',()=>setHist(false));
+scrim.addEventListener('click',()=>setHist(false));
+$('histClear').addEventListener('click',()=>{S.hist=[];save();renderHistory();snack('История очищена')});
+
+/* theme */
+const themeBtn=$('themeBtn');
+const THEME_RU={auto:'как в системе',light:'светлая',dark:'тёмная'};
+function applyTheme(){
+  if(S.theme==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',S.theme);
+  const l='Тема: '+THEME_RU[S.theme];themeBtn.setAttribute('aria-label',l);themeBtn.title=l;
+}
+themeBtn.addEventListener('click',()=>{S.theme={auto:'light',light:'dark',dark:'auto'}[S.theme];applyTheme();save();snack('Тема: '+THEME_RU[S.theme])});
+
+/* keyboard */
+function flash(k){const o=keyEls[k];if(!o)return;o.el.classList.add('pressed');setTimeout(()=>o.el.classList.remove('pressed'),130)}
+function viaKey(k){const o=keyEls[k];if(o){press(o.d);flash(k)}}
+const KMAP={'+':'+','-':'−','*':'×','x':'×','/':'÷',':':'÷','^':'xʸ','%':'%','!':'n!','.':'.',',':',','p':'π','e':'e','l':'ln','g':'log','r':'√','a':'Ans','m':'mod','i':'inv','d':'deg','=':'=','Enter':'=','Escape':'AC'};
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(S.histOpen){if(e.key==='Escape'){e.preventDefault();setHist(false)}return}
+  const tgt=e.target;
+  if(tgt!==exprEl&&tgt.closest&&tgt.closest('button')&&(e.key==='Enter'||e.key===' '))return;
+  let k=e.key;
+  if(e.code==='NumpadDecimal')k='.';
+  if(/^[0-9]$/.test(k)){viaKey(k)}
+  else if(k==='s'||k==='c'||k==='t'||k==='S'||k==='C'||k==='T'){
+    const n={s:'sin',c:'cos',t:'tan'}[k.toLowerCase()];
+    insert((S.inv||k!==k.toLowerCase())?n+'⁻¹(':n+'(');flash(n);
+  }
+  else if(k==='('||k===')'){insert(k);flash('()')}
+  else if(k==='Backspace'){backspace();bs.classList.add('pressed');setTimeout(()=>bs.classList.remove('pressed'),130)}
+  else if(k==='Delete'){delForward()}
+  else if(k==='h'){setHist(true)}
+  else if((k==='ArrowLeft'||k==='ArrowRight'||k==='Home'||k==='End')&&tgt!==exprEl&&!tgt.closest?.('button')){
+    if(S.done)return;
+    S.cur=k==='Home'?0:k==='End'?S.expr.length:Math.max(0,Math.min(S.expr.length,S.cur+(k==='ArrowLeft'?-1:1)));
+    exprEl.focus({preventScroll:true});render();
+  }
+  else if(KMAP[k]){viaKey(KMAP[k])}
+  else return;
+  e.preventDefault();
+});
+
+addEventListener('resize',render);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+applyTheme();setSci(false);renderHistory();render();
+})();
+</script>

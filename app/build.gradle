@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The page shipped inside the app is generated from web/calculator.html (see wrapWebPage below).
+def runNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
+android {
+    namespace 'com.beyren.calculator'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.beyren.calculator'
+        minSdk 26
+        targetSdk 34
+        versionCode runNumber
+        versionName "1.0.${runNumber}"
+    }
+
+    signingConfigs {
+        // A fixed key, committed on purpose, so each new APK installs over the previous one.
+        // It is fine for personal use; do not use it for Google Play.
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
+
+// Wrap the artifact page (which has no <html>/<head>) into a full document for the WebView.
+tasks.register('wrapWebPage') {
+    def src = rootProject.file('web/calculator.html')
+    def out = file('src/main/assets/index.html')
+    inputs.file src
+    outputs.file out
+    doLast {
+        out.parentFile.mkdirs()
+        out.setText('<!doctype html>\n<html lang="ru">\n<head>\n<meta charset="utf-8">\n' +
+            '<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">\n' +
+            '<style>[hidden]{display:none!important}</style>\n</head>\n<body>\n' +
+            src.getText('UTF-8') + '\n</body>\n</html>\n', 'UTF-8')
+    }
+}
+preBuild.dependsOn 'wrapWebPage'
