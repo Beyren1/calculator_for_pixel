@@ -221,6 +221,27 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> applyBars(theme));
         }
 
+        /** A picture copied to the clipboard (for example "Copy image" in a browser or messenger). */
+        @JavascriptInterface
+        public void pasteImage() {
+            runOnUiThread(() -> {
+                try {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    ClipData clip = cm != null ? cm.getPrimaryClip() : null;
+                    if (clip != null) {
+                        for (int i = 0; i < clip.getItemCount(); i++) {
+                            Uri u = clip.getItemAt(i).getUri();
+                            String type = u != null ? getContentResolver().getType(u) : null;
+                            if (u != null && (type == null || type.startsWith("image/"))) { recognize(u); return; }
+                        }
+                    }
+                    sendPhotoText(null, "В буфере обмена нет картинки");
+                } catch (Exception e) {
+                    sendPhotoText(null, "Не удалось взять картинку из буфера");
+                }
+            });
+        }
+
         @JavascriptInterface
         public void scanPhoto(String source) {
             runOnUiThread(() -> startPhoto(source));
